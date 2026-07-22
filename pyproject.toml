@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "butterchurn-mcp"
+version = "0.1.0"
+description = "MilkDrop-style audio-reactive WebGL visualizer via butterchurn. FastMCP 3.4+ server with OSC BPM endpoint for mixx-dj-mcp sync."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+authors = [{ name = "Sandra Schipal" }]
+dependencies = [
+    "fastmcp>=3.4.4,<4",
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "python-dotenv>=1.0",
+    "starlette>=0.46",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.8"]
+
+[project.urls]
+Homepage = "https://github.com/sandraschi/butterchurn-mcp"
+Repository = "https://github.com/sandraschi/butterchurn-mcp"
+Issues = "https://github.com/sandraschi/butterchurn-mcp/issues"
+
+[project.scripts]
+butterchurn-mcp = "butterchurn_mcp.__main__:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
+ignore = ["S101", "B008"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"

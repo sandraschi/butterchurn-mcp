@@ -1,0 +1,18 @@
+# butterchurn-mcp
+
+> FastMCP 3.4+ server: MilkDrop-style audio-reactive WebGL visualizer via butterchurn. Dual transport: **stdio** default, **HTTP** with MCP at `/mcp`. Full-screen Vite dashboard on **11125** proxies to API on **11124**.
+
+**Full detail:** see `llms-full.txt`.
+
+## Quick links
+- [README](README.md) — install, run
+- [glama.json](glama.json) — Glama discovery
+
+## Ports (fleet range 10700–11500)
+
+| Role | Port |
+|------|------|
+| FastAPI + MCP HTTP | **11124** |
+| Vite dev (SPA) | **11125** |
+
+Adjacency: backend/frontend paired per fleet WEBAPP_STANDARDS.
