@@ -7,7 +7,16 @@
   <a href="https://github.com/jberg/butterchurn"><img src="https://img.shields.io/badge/butterchurn-2.6-ff6b35?style=flat-square" alt="Butterchurn"></a>
 </p>
 
-> MilkDrop-style audio-reactive WebGL visualizer, powered by [butterchurn](https://github.com/jberg/butterchurn). FastMCP 3.4+ server with a full-screen React webapp and an OSC-ready BPM sync endpoint for [mixx-dj-mcp](https://github.com/sandraschi/mixx-dj-mcp).
+> Universal visualizer toolbox — modern WebGL2 GLSL shaders + legacy MilkDrop presets (butterchurn). FastMCP server with BPM sync for [mixx-dj-mcp](https://github.com/sandraschi/mixx-dj-mcp).
+
+## Engines
+
+| Engine | What | When to use |
+|--------|------|-------------|
+| **GLSL Shaders** | 6 bundled WebGL2 scenes (gyroid, tunnel, plasma, …) | Modern look, no `.milk` baggage |
+| **Butterchurn** | 500+ community MilkDrop presets | Retro Winamp nostalgia |
+
+Open **Toolbox** in the webapp to switch engines, preview, and go fullscreen.
 
 ## How it works
 
@@ -19,7 +28,7 @@ The webapp fills the entire browser window with a WebGL canvas running MilkDrop 
 
 ```powershell
 uv sync
-cd web_sota && bun install && cd ..
+cd webapp; bun install; cd ..
 just serve     # backend on :11124 + MCP HTTP at /mcp
 ```
 

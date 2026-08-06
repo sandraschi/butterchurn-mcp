@@ -1,4 +1,4 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 
 default:
     @just --list
@@ -33,17 +33,27 @@ install:
     uv sync
 
 install-web:
-    Set-Location '{{justfile_directory()}}\web_sota'
+    Set-Location '{{justfile_directory()}}\webapp'
     bun install
 
 web:
-    Set-Location '{{justfile_directory()}}\web_sota'
+    Set-Location '{{justfile_directory()}}\webapp'
     bun run dev
 
+build-web:
+    Set-Location '{{justfile_directory()}}\webapp'
+    bun run build
+
 health:
-    curl.exe -s http://127.0.0.1:11124/health
+    curl.exe -s http://127.0.0.1:11124/api/health
 
 clean:
-    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue dist, build, .ruff_cache, .pytest_cache, web_sota/node_modules, web_sota/dist
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue dist, build, .ruff_cache, .pytest_cache, webapp/node_modules, webapp/dist
     Get-ChildItem -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     Write-Host 'Cleaned.'
+
+# Bootstrap: install dev deps + pre-commit hook
+bootstrap:
+    uv sync --group dev
+    uv run pre-commit install
+    Write-Host "Pre-commit hooks installed." -ForegroundColor Green

@@ -1,7 +1,7 @@
 # butterchurn-mcp — Agent Guide
 
 ## Overview
-FastMCP 3.4+ server that hosts a MilkDrop-style audio-reactive WebGL visualizer via butterchurn. Provides an `/api/bpm` endpoint for mixx-dj-mcp to sync BPM. Mostly a webapp host.
+Universal visualizer toolbox (FastMCP 3.4+). Pluggable engines: **GLSL Shaders** (modern WebGL2) and **Butterchurn/MilkDrop** (legacy presets). BPM sync for mixx-dj-mcp.
 
 ## Entry Points
 - `uv run butterchurn-mcp` → `butterchurn_mcp.__main__:main`
@@ -12,8 +12,27 @@ FastMCP 3.4+ server that hosts a MilkDrop-style audio-reactive WebGL visualizer 
 | FastAPI + MCP HTTP | 11124 |
 | Vite dev (SPA) | 11125 |
 
+## Visualizer engines
+| Engine | Era | Runtime |
+|--------|-----|---------|
+| `shader` | modern | WebGL2 GLSL (6 bundled scenes) |
+| `butterchurn` | legacy | butterchurn + 500+ MilkDrop presets |
+
 ## Key Files
-- `run_server.py` — dual transport entry point (PyInstaller)
-- `src/butterchurn_mcp/server.py` — FastMCP instance + health + /api/bpm
-- `src/butterchurn_mcp/config.py` — settings from env
-- `web_sota/src/components/Visualizer.tsx` — full-screen butterchurn renderer
+- `webapp/src/pages/ToolboxPage.tsx` — engine picker + scene grid + live preview
+- `webapp/src/visualizers/shader/scenes.ts` — bundled GLSL fragment shaders
+- `webapp/src/visualizers/shader/ShaderCanvas.tsx` — WebGL2 renderer
+- `webapp/src/visualizers/registry.ts` — engine catalog
+- `webapp/src/components/Visualizer.tsx` — butterchurn fullscreen
+- `src/butterchurn_mcp/app.py` — `/api/visualizers`, `/api/bpm`
+
+## Webapp routes
+Dashboard · **Toolbox** · Presets · Visualizer · Tools · Settings · Logs · Help
+
+Fullscreen: `/visualizer?engine=shader&scene=gyroid-pulse` or `?engine=butterchurn&i=42`
+
+## Launch
+```powershell
+just serve
+just web
+```
