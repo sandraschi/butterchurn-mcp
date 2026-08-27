@@ -15,6 +15,15 @@ Get-NetTCPConnection -LocalPort 10878 -ErrorAction SilentlyContinue |
 Get-NetTCPConnection -LocalPort 10879 -ErrorAction SilentlyContinue |
     ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
 
+# Wait for the ports to actually release (old process socket may linger in TIME_WAIT).
+foreach ($port in 10878, 10879) {
+    for ($i = 0; $i -lt 20; $i++) {
+        $busy = Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction SilentlyContinue
+        if (-not $busy) { break }
+        Start-Sleep -Milliseconds 500
+    }
+}
+
 Write-Host 'Starting backend (port 10878)...' -ForegroundColor Green
 Start-Process pwsh -ArgumentList '-NoProfile', '-WorkingDirectory', $PSScriptRoot, '-Command', 'uv run butterchurn-mcp --serve' -WindowStyle Hidden
 
