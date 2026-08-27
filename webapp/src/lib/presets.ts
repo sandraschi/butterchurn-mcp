@@ -25,9 +25,22 @@ let cached: PresetEntry[] | null = null;
 const lazyLoaded: string[] = [];
 
 async function fetchPack(url: string): Promise<Record<string, unknown>> {
-	const res = await fetch(url);
-	if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
-	return (await res.json()) as Record<string, unknown>;
+	const attempts = 3;
+	let lastErr: unknown = null;
+	for (let i = 0; i < attempts; i++) {
+		try {
+			const res = await fetch(url, { cache: "force-cache" });
+			if (!res.ok) throw new Error(`HTTP ${res.status}`);
+			return (await res.json()) as Record<string, unknown>;
+		} catch (err) {
+			lastErr = err;
+			// Transient network/large-download failures: back off and retry.
+			await new Promise((r) => setTimeout(r, 800 * (i + 1)));
+		}
+	}
+	throw lastErr instanceof Error
+		? new Error(`Failed to fetch ${url}: ${lastErr.message}`)
+		: new Error(`Failed to fetch ${url}`);
 }
 
 function isPresetObject(v: unknown): boolean {

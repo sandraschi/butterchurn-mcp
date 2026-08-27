@@ -6,6 +6,7 @@ import argparse
 import asyncio
 import logging
 import os
+import subprocess
 import sys
 import time
 
@@ -15,6 +16,38 @@ from butterchurn_mcp.config import load_settings
 from butterchurn_mcp.server import mcp
 
 _start_time = time.time()
+
+
+def _clear_port(port: int) -> None:
+    """Kill any process listening on `port` (stale/background server)."""
+    if os.name != "nt":
+        return
+    try:
+        out = subprocess.run(
+            ["netstat", "-ano", "-p", "tcp"],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        ).stdout
+    except Exception:
+        return
+    for line in out.splitlines():
+        if not line.strip():
+            continue
+        parts = line.split()
+        if len(parts) < 5:
+            continue
+        try:
+            local = parts[1]
+            pid = int(parts[4])
+        except (ValueError, IndexError):
+            continue
+        if local.endswith(f":{port}") and parts[3] == "LISTENING" and pid not in (0, 4):
+            try:
+                subprocess.run(["taskkill", "/F", "/PID", str(pid)], capture_output=True, timeout=10)
+                print(f"[butterchurn-mcp] cleared stale listener on port {port} (pid {pid})")
+            except Exception:
+                continue
 
 
 def _configure_logging(*, debug: bool) -> None:
@@ -43,6 +76,8 @@ def main() -> None:
     port = args.port or settings.port
 
     if use_http:
+        if args.serve:
+            _clear_port(port)
         uvicorn.run(
             "butterchurn_mcp.app:app",
             host=host,
