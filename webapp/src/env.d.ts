@@ -36,10 +36,3 @@ declare module "butterchurn-presets/lib/*" {
 	const def: { getPresets: typeof getPresets };
 	export default def;
 }
-
-declare module "../visualizers/presets/*" {
-	function getPresets(): Record<string, unknown>;
-	export { getPresets };
-	const def: { getPresets: typeof getPresets };
-	export default def;
-}

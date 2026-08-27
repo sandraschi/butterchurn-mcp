@@ -16,17 +16,19 @@ const EAGER_PACKS = [
 	"ProjectM Original",
 ];
 
-const LAZY_PACKS: Record<
-	string,
-	() => Promise<{ getPresets: () => Record<string, unknown> }>
-> = {
-	"ProjectM Cream Geo": () => import("../visualizers/presets/projectmCreamGeo"),
-	"ProjectM Cream Particles": () =>
-		import("../visualizers/presets/projectmCreamParticles"),
+const LAZY_PACKS: Record<string, string> = {
+	"ProjectM Cream Geo": "/presets/projectmCreamGeo.json",
+	"ProjectM Cream Particles": "/presets/projectmCreamParticles.json",
 };
 
 let cached: PresetEntry[] | null = null;
 const lazyLoaded: string[] = [];
+
+async function fetchPack(url: string): Promise<Record<string, unknown>> {
+	const res = await fetch(url);
+	if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
+	return (await res.json()) as Record<string, unknown>;
+}
 
 function isPresetObject(v: unknown): boolean {
 	return (
@@ -193,11 +195,8 @@ async function loadAllPacks(): Promise<Omit<PresetEntry, "index">[]> {
 		})(),
 		(async () => {
 			try {
-				const m = await import("../visualizers/presets/projectmOriginal");
-				return flattenEntries(
-					extractPresets(m as Record<string, unknown>),
-					"ProjectM Original",
-				);
+				const raw = await fetchPack("/presets/projectmOriginal.json");
+				return flattenEntries(raw, "ProjectM Original");
 			} catch {
 				return [];
 			}
@@ -217,15 +216,10 @@ export async function loadAllPresets(): Promise<PresetEntry[]> {
 export async function loadLazyCategory(
 	category: string,
 ): Promise<PresetEntry[]> {
-	const loader = LAZY_PACKS[category];
-	if (!loader || lazyLoaded.includes(category)) return [];
-	const m = (await loader()) as unknown as {
-		getPresets: () => Record<string, unknown>;
-	};
-	const entries = flattenEntries(
-		extractPresets(m as Record<string, unknown>),
-		category,
-	);
+	const url = LAZY_PACKS[category];
+	if (!url || lazyLoaded.includes(category)) return [];
+	const raw = await fetchPack(url);
+	const entries = flattenEntries(raw, category);
 	let all = cached ?? (await loadAllPresets());
 	for (const e of entries) {
 		if (!all.some((p) => p.name === e.name)) {
