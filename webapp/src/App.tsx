@@ -241,7 +241,7 @@ export default function App() {
 						</button>
 					</header>
 
-					<main className="flex-1 overflow-hidden min-h-0">
+					<main className="flex-1 overflow-y-auto min-h-0">
 						<AnimatePresence mode="wait">
 							<Routes>
 								<Route path="/" element={<Dashboard backendOk={backendOk} />} />

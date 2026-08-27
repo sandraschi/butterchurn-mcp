@@ -6,7 +6,7 @@ export default function HelpPage() {
 		<motion.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			className="p-6 max-w-3xl pb-8 h-full overflow-y-auto"
+			className="p-6 max-w-3xl pb-8"
 		>
 			<div className="mb-6 flex items-center gap-2">
 				<HelpCircle className="text-amber-400" size={22} />

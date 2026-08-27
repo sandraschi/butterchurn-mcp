@@ -189,7 +189,7 @@ export default function PresetsPage() {
 	}, [category, ensureCategory]);
 
 	return (
-		<div className="h-full flex flex-col overflow-hidden">
+		<div className="flex flex-col">
 			<div className="shrink-0 border-b border-zinc-800 bg-zinc-950">
 				<div className="px-4 py-3 flex flex-wrap items-center gap-3">
 					<div className="flex items-center gap-2">
@@ -314,7 +314,7 @@ export default function PresetsPage() {
 				</div>
 			</div>
 
-			<div className="flex-1 overflow-y-auto p-4">
+			<div className="p-4">
 				{loading && (
 					<p className="text-sm text-zinc-500">Loading preset library…</p>
 				)}
