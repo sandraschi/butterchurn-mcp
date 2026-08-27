@@ -49,7 +49,7 @@ function Inner() {
       </div>
 
       <p className="text-xs text-zinc-600 mt-6 font-mono flex items-center gap-1">
-        <Wrench size={12} /> MCP HTTP: http://127.0.0.1:11124/mcp
+        <Wrench size={12} /> MCP HTTP: http://127.0.0.1:10878/mcp
       </p>
     </motion.div>
   );

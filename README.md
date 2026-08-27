@@ -18,26 +18,36 @@
 
 Open **Toolbox** in the webapp to switch engines, preview, and go fullscreen.
 
+The **Presets** page is a live gallery of every butterchurn visualizer: each thumbnail
+renders its own animated preview (up to ~12 WebGL contexts at once, cards activate as
+you scroll) with search, category/author filters, favorites, a slideshow mode, and a
+one-click fullscreen view.
+
 ## How it works
 
 The webapp fills the entire browser window with a WebGL canvas running MilkDrop preset visualizations. The built-in beat generator pulses to the current BPM (default 128). Presets cycle through the butterchurn library — click or use arrow keys to switch.
 
-**mixx-dj-mcp integration:** Send `POST /api/bpm { "bpm": 140 }` to the backend at 11124 to sync the visualizer's beat to a DJ set.
+**mixx-dj-mcp integration:** Send `POST /api/bpm { "bpm": 140 }` to the backend at 10878 to sync the visualizer's beat to a DJ set.
 
 ## Quick start
 
 ```powershell
+git clone https://github.com/sandraschi/butterchurn-mcp
+cd butterchurn-mcp
 uv sync
 cd webapp; bun install; cd ..
-just serve     # backend on :11124 + MCP HTTP at /mcp
+just serve     # backend on :10878 + MCP HTTP at /mcp
 ```
 
 In another terminal:
 ```powershell
-just web       # Vite dev on :11125
+just web       # Vite dev on :10879
 ```
 
-Or use `start.ps1` for both at once.
+Or use `start.ps1` for both at once. It starts the backend (`:10878`) and the Vite
+dev server (`:10879`) as detached background processes, opens the webapp, and returns
+immediately — no hanging terminal. Requires `bun` on PATH (or auto-detects the default
+`~\.bun\bin\bun.exe`).
 
 ## API
 
@@ -58,5 +68,28 @@ Or use `start.ps1` for both at once.
 
 | Role | Port |
 |------|------|
-| Backend (FastAPI + MCP HTTP) | 11124 |
-| Frontend (Vite dev) | 11125 |
+| Backend (FastAPI + MCP HTTP) | 10878 |
+| Frontend (Vite dev) | 10879 |
+
+## Documentation
+
+| Doc | Contents |
+|-----|----------|
+| [Installation](INSTALL.md) | All install methods, prerequisites |
+| [Product Requirements](docs/PRD.md) | Goals, requirements, status |
+| [Architecture](docs/ARCHITECTURE.md) | System architecture, data flow, ports |
+| [Configuration](docs/CONFIGURATION.md) | Env vars, config options |
+| [Tool Reference](docs/TOOLS.md) | All available tools |
+| [Development](docs/DEVELOPMENT.md) | Contributing, local setup |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | Common issues |
+
+## Requirements
+
+- Windows / macOS / Linux
+- Python 3.12+ and [uv](https://docs.astral.sh/uv/) (Option A/C)
+- [Bun](https://bun.sh) for the webapp dev server (Option A)
+- A WebGL2-capable browser (Chrome, Edge, Firefox, Safari)
+
+## License
+
+MIT

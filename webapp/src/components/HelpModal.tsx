@@ -20,7 +20,7 @@ const HELP_ITEMS = [
   },
   {
     title: "Ports",
-    desc: "Backend 11124 · Frontend 11125",
+    desc: "Backend 10878 · Frontend 10879",
   },
 ];
 

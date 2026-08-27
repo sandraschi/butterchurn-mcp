@@ -40,9 +40,5 @@ def list_logs(*, limit: int = 100, level: str = "", search: str = "") -> list[di
         items = [e for e in items if e["level"] == level.upper()]
     if search:
         needle = search.lower()
-        items = [
-            e
-            for e in items
-            if needle in e["detail"].lower() or needle in e["kind"].lower()
-        ]
+        items = [e for e in items if needle in e["detail"].lower() or needle in e["kind"].lower()]
     return items[-limit:]

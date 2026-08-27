@@ -1,0 +1,38 @@
+# Changelog
+
+All notable changes to butterchurn-mcp are documented here.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Added
+- **Live preset gallery**: the Presets page now renders each butterchurn visualizer
+  as its own animated thumbnail. Cards activate as they scroll into view, capped at
+  ~12 concurrent WebGL contexts (browser limit) via a slot pool, and fall back to a
+  static gradient when inactive. Retains search, category/author filters, favorites,
+  slideshow, and one-click fullscreen.
+
+### Fixed
+- **Launcher hang**: `start.ps1` blocked forever on `Receive-Job -Wait` (the vite dev
+  server never exits). The frontend now launches as a detached background process and
+  the script returns immediately.
+- **Frontend never started**: `bun` was not on the detached shell's PATH, so the
+  hidden `pwsh` could not find it and vite never launched. `start.ps1` now resolves
+  the full bun path (`~\.bun\bin\bun.exe` fallback).
+- **Backend crash on start**: the venv was missing `python-dotenv` (declared in
+  `pyproject.toml` but not installed), causing a `ModuleNotFoundError` on import.
+
+## [0.1.0] - 2026-07-22
+
+### Added
+- FastMCP 3.4+ server with stdio and HTTP (`/mcp`) transports.
+- `get_bpm` / `set_bpm` MCP tools for mixx-dj-mcp beat sync.
+- Butterchurn MilkDrop visualizer engine (500+ community presets).
+- GLSL Shader engine (6 bundled WebGL2 scenes) in the webapp Toolbox.
+- Full-screen Vite dashboard with Toolbox, Presets, Visualizer, Chat, Settings,
+  Logs, and Help pages.
+- REST API: `/health`, `/api/capabilities`, `/api/visualizers`, `/api/dashboard`,
+  `/api/tools`, `/api/skills`, `/api/logs`, `/api/bpm`.
+- `start.ps1` one-shot launcher for backend + frontend.

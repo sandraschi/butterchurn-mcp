@@ -82,7 +82,7 @@ function Inner({ backendOk }: { backendOk: boolean | null }) {
             fullscreen — click or arrow keys to cycle
           </li>
           <li>Sync BPM from mixx-dj-mcp via POST /api/bpm or the Settings page</li>
-          <li>MCP tools: get_bpm, set_bpm on http://127.0.0.1:11124/mcp</li>
+          <li>MCP tools: get_bpm, set_bpm on http://127.0.0.1:10878/mcp</li>
         </ol>
       </div>
 
@@ -92,7 +92,7 @@ function Inner({ backendOk }: { backendOk: boolean | null }) {
           backendOk ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200" : "border-red-500/30 bg-red-500/10 text-red-200",
         )}
       >
-        {backendOk === null ? "Checking backend…" : backendOk ? "Backend connected on port 11124" : "Backend offline — run just serve"}
+        {backendOk === null ? "Checking backend…" : backendOk ? "Backend connected on port 10878" : "Backend offline — run just serve"}
       </div>
     </motion.div>
   );

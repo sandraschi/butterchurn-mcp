@@ -39,9 +39,9 @@ export default function HelpPage() {
         <section>
           <h2 className="text-base font-semibold text-zinc-100 mb-2">Ports</h2>
           <ul className="font-mono text-xs text-zinc-400 space-y-1">
-            <li>Backend (FastAPI + MCP): 11124</li>
-            <li>Frontend (Vite dev): 11125</li>
-            <li>MCP HTTP: http://127.0.0.1:11124/mcp</li>
+            <li>Backend (FastAPI + MCP): 10878</li>
+            <li>Frontend (Vite dev): 10879</li>
+            <li>MCP HTTP: http://127.0.0.1:10878/mcp</li>
           </ul>
         </section>
 
@@ -58,7 +58,7 @@ export default function HelpPage() {
         <section>
           <h2 className="text-base font-semibold text-zinc-100 mb-2">Launch</h2>
           <pre className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-400 overflow-x-auto">
-            {`just serve   # backend :11124\njust web     # frontend :11125\n# or: .\\start.ps1`}
+            {`just serve   # backend :10878\njust web     # frontend :10879\n# or: .\\start.ps1`}
           </pre>
         </section>
       </div>

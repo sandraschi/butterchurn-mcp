@@ -1,5 +1,7 @@
 set windows-shell := ["powershell.exe", "-NoProfile", "-Command"]
 
+import 'scripts/just/fleet.just'
+
 default:
     @just --list
 
@@ -24,6 +26,7 @@ test:
     uv run pytest -v
 
 serve:
+    powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 11124 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
     uv run butterchurn-mcp --serve
 
 stdio:

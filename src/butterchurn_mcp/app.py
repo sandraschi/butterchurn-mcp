@@ -1,4 +1,4 @@
-"""FastAPI app — health, BPM endpoint, MCP HTTP mount, fleet webapp APIs."""
+"""FastAPI app - health, BPM endpoint, MCP HTTP mount, fleet webapp APIs."""
 
 from __future__ import annotations
 
@@ -47,8 +47,8 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:11125",
-        "http://127.0.0.1:11125",
+        "http://localhost:10879",
+        "http://127.0.0.1:10879",
         "tauri://localhost",
         "http://tauri.localhost",
         "https://tauri.localhost",
@@ -81,7 +81,7 @@ async def health():
         "version": __version__,
         "uptime_seconds": _uptime(),
         "bpm": read_bpm(),
-        "ports": {"backend": settings.port, "frontend": 11125},
+        "ports": {"backend": settings.port, "frontend": 10879},
     }
 
 

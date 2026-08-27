@@ -1,10 +1,56 @@
-.venv/
+# Python
 __pycache__/
-.ruff_cache/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.mypy_cache/
 .pytest_cache/
+.ruff_cache/
+
+# Node / webapp
+node_modules/
+**/node_modules/
+*.tsbuildinfo
+webapp/dist/
+
+# Rust / Tauri (fleet: rust-analyzer may create a root target/)
+target/
+gen/
+
+# Build output
 dist/
 build/
-*.egg-info/
-web_sota/node_modules/
-web_sota/dist/
-target/
+*.spec
+*.mcpb
+
+# MCPB pack staging (exact copy of src/ for packing — never commit)
+mcpb/src/
+mcpb/
+
+# Data / DB
+data/
+*.db
+*.db-shm
+*.db-wal
+
+# Secrets
+.env
+.env.*
+!.env.example
+*.pem
+
+# OS / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs
+*.log
+logs/
+
+# Fleet backup artifacts
+*.bak
+*.bak.*

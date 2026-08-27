@@ -9,8 +9,8 @@ Universal visualizer toolbox (FastMCP 3.4+). Pluggable engines: **GLSL Shaders**
 ## Ports
 | Role | Port |
 |------|------|
-| FastAPI + MCP HTTP | 11124 |
-| Vite dev (SPA) | 11125 |
+| FastAPI + MCP HTTP | 10878 |
+| Vite dev (SPA) | 10879 |
 
 ## Visualizer engines
 | Engine | Era | Runtime |

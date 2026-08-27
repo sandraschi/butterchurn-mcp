@@ -1,4 +1,4 @@
-"""FastMCP 3.4+ — butterchurn visualizer host with BPM sync."""
+"""FastMCP 3.4+ - butterchurn visualizer host with BPM sync."""
 
 from __future__ import annotations
 

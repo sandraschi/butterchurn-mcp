@@ -1,0 +1,124 @@
+# butterchurn-mcp — Full Reference
+
+> MilkDrop-style audio-reactive WebGL visualizer via butterchurn. FastMCP 3.4+
+> server with BPM sync for mixx-dj-mcp. Dual transport: stdio (default) and HTTP
+> with MCP at `/mcp`. Full-screen Vite dashboard on `:10879` proxies to the API on
+> `:10878`.
+
+## Table of Contents
+
+- [Quick start](#quick-start)
+- [Architecture](#architecture)
+- [Ports](#ports)
+- [Environment variables](#environment-variables)
+- [REST API](#rest-api)
+- [MCP tools](#mcp-tools)
+- [Webapp](#webapp)
+- [Visualizer engines](#visualizer-engines)
+- [Troubleshooting](#troubleshooting)
+
+## Quick start
+
+```powershell
+git clone https://github.com/sandraschi/butterchurn-mcp
+cd butterchurn-mcp
+uv sync
+cd webapp; bun install; cd ..
+.\start.ps1     # backend :10878 + frontend :10879, opens browser
+```
+
+Or run separately: `uv run butterchurn-mcp --serve` (backend) and `cd webapp; bun run dev` (frontend).
+
+## Architecture
+
+```
+browser (Vite SPA :10879)
+   │  /api/*  /health  /mcp   (proxied to backend)
+   ▼
+FastAPI + FastMCP HTTP (:10878)
+   ├── /api/bpm  GET/POST  →  bpm_state (in-memory)
+   ├── /mcp                 →  FastMCP stdio-compatible MCP endpoint
+   └── /api/logs            →  log_buffer (in-memory ring)
+```
+
+- **Transport**: stdio by default (`uv run butterchurn-mcp`); HTTP via
+  `--serve` (FastAPI hosting the MCP endpoint at `/mcp`).
+- **BPM state**: a single in-memory value (default 128). `set_bpm` writes it;
+  the webapp polls `/api/bpm` every 2s and re-times the visualizer's beat
+  generator.
+- **WebGL rendering**: butterchurn runs entirely in the browser. The Python
+  backend serves data + APIs; no frames are streamed from Python.
+
+## Ports
+
+| Role | Port |
+|------|------|
+| Backend (FastAPI + MCP HTTP) | 10878 |
+| Frontend (Vite dev) | 10879 |
+
+Ports are configurable via `BUTTERCHURN_MCP_HOST` / `BUTTERCHURN_MCP_PORT`.
+
+## Environment variables
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BUTTERCHURN_MCP_HOST` | `127.0.0.1` | Bind host for the HTTP server |
+| `BUTTERCHURN_MCP_PORT` | `10878` | Backend port |
+| `BUTTERCHURN_MCP_HTTP_PATH` | `/mcp` | Path the MCP HTTP endpoint is mounted at |
+| `BUTTERCHURN_MCP_DEFAULT_BPM` | `128` | Initial BPM shown until set |
+
+## REST API
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/health`, `/api/health`, `/api/v1/health` | GET | Status, version, uptime, current BPM |
+| `/api/capabilities` | GET | Server + tool surface + features inventory |
+| `/api/visualizers` | GET | Engine catalog (shader scenes + butterchurn) |
+| `/api/dashboard` | GET | BPM, uptime, preset library, engine list |
+| `/api/tools` | GET | MCP tool list |
+| `/api/skills` | GET | Bundled skills (if any) |
+| `/api/logs?limit&level&search` | GET | Recent server log entries |
+| `/api/bpm` | GET | Current BPM |
+| `/api/bpm` | POST `{"bpm": 140}` | Set BPM (60–200) |
+
+## MCP tools
+
+| Tool | Description |
+|------|-------------|
+| `get_bpm` | Read current BPM driving the visualizer beat generator |
+| `set_bpm(bpm)` | Set BPM (60–200) for mixx-dj-mcp sync; logs the change |
+
+MCP registration name in clients: `butterchurn` (short alias).
+
+## Webapp
+
+Routes: Dashboard · Toolbox · Presets · Visualizer · Tools · Skills · Chat ·
+Settings · Logs · Help.
+
+- **Toolbox** (`/toolbox`): engine picker + scene grid + live preview.
+- **Presets** (`/presets`): live gallery of every butterchurn visualizer. Each
+  thumbnail renders its own animated preview (cards activate on scroll, ~12
+  concurrent WebGL contexts max) with search, category/author filters,
+  favorites, slideshow, and fullscreen.
+- **Visualizer** (`/visualizer`): fullscreen canvas; `?engine=shader&scene=…` or
+  `?engine=butterchurn&i=<preset-index>`.
+- **Fullscreen** link from a preset jumps to `/visualizer?i=<index>`.
+
+## Visualizer engines
+
+| Engine | Era | Runtime | Content |
+|--------|-----|---------|---------|
+| `shader` | modern | WebGL2 GLSL | 6 bundled scenes (gyroid-pulse, neon-tunnel, spectrum-rings, plasma-flow, cosmic-bloom, neon-grid) |
+| `butterchurn` | legacy | butterchurn + MilkDrop | 500+ community presets from `butterchurn-presets` |
+
+## Troubleshooting
+
+- **Launcher never returns / no browser**: both servers are detached; check the
+  ports are listening (`Get-NetTCPConnection -LocalPort 10878,10879`). If the
+  backend crashed, `uv run butterchurn-mcp --serve` in a terminal shows the
+  traceback.
+- **`ModuleNotFoundError: dotenv`**: run `uv sync --reinstall-package python-dotenv`.
+- **Frontend blank / vite not found**: `start.ps1` needs `bun` on PATH or at
+  `~\.bun\bin\bun.exe`. Start it manually with `cd webapp; bun run dev`.
+
+See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for more.
