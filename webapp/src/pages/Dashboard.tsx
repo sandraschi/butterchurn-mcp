@@ -50,7 +50,7 @@ function Inner({ backendOk }: { backendOk: boolean | null }) {
 		<motion.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			className="p-6 max-w-4xl pb-8"
+			className="p-6 max-w-4xl pb-8 h-full overflow-y-auto"
 		>
 			<div className="mb-6">
 				<h1 className="text-xl font-semibold text-zinc-100">Dashboard</h1>

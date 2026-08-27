@@ -170,7 +170,7 @@ export default function SettingsPage() {
 		<motion.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			className="p-6 max-w-2xl pb-8 space-y-8"
+			className="p-6 max-w-2xl pb-8 h-full overflow-y-auto space-y-8"
 		>
 			<div>
 				<h1 className="text-xl font-semibold text-zinc-100">Settings</h1>

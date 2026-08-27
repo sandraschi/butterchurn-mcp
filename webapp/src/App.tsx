@@ -118,9 +118,9 @@ export default function App() {
 					transition={{ duration: 0.2 }}
 					className="flex flex-col bg-zinc-900 border-r border-zinc-800 shrink-0 overflow-hidden"
 				>
-					<div className="flex items-center justify-between px-3 py-3 border-b border-zinc-800">
-						<div className="flex items-center gap-2 min-w-0">
-							<span className="text-xl shrink-0">🌊</span>
+					<div className="flex items-center justify-between px-2 py-2 border-b border-zinc-800">
+						<div className="flex items-center gap-1 min-w-0">
+							<span className="text-lg shrink-0">🌊</span>
 							{!collapsed && (
 								<motion.span
 									initial={{ opacity: 0 }}
@@ -134,13 +134,15 @@ export default function App() {
 						<button
 							type="button"
 							onClick={() => setCollapsed((c) => !c)}
-							className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+							aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
 							title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+							className="p-1.5 rounded-md text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 transition-colors shrink-0"
+							data-testid="sidebar-toggle"
 						>
 							{collapsed ? (
-								<ChevronRight size={14} />
+								<ChevronRight size={16} />
 							) : (
-								<ChevronLeft size={14} />
+								<ChevronLeft size={16} />
 							)}
 						</button>
 					</div>
@@ -204,7 +206,7 @@ export default function App() {
 					</div>
 				</motion.aside>
 
-				<div className="flex-1 flex flex-col min-w-0">
+				<div className="flex-1 flex flex-col min-w-0 min-h-0">
 					<header className="flex items-center justify-end gap-2 px-4 py-2 border-b border-zinc-800 bg-zinc-900/50 shrink-0">
 						<button
 							type="button"
@@ -239,7 +241,7 @@ export default function App() {
 						</button>
 					</header>
 
-					<main className="flex-1 overflow-y-auto min-h-0">
+					<main className="flex-1 overflow-hidden min-h-0">
 						<AnimatePresence mode="wait">
 							<Routes>
 								<Route path="/" element={<Dashboard backendOk={backendOk} />} />
