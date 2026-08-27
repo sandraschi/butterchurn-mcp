@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **projectM presets**: bundled MilkDrop presets from projectM's packs, converted to
+  butterchurn JSON. `ProjectM Original` (513) loads eagerly; the large
+  `ProjectM Cream Geo` (996) and `ProjectM Cream Particles` (375) packs lazy-load
+  only when browsed, keeping the initial page load lean (code-split chunks).
 - **Live preset gallery**: the Presets page now renders each butterchurn visualizer
   as its own animated thumbnail. Cards activate as they scroll into view, capped at
   ~12 concurrent WebGL contexts (browser limit) via a slot pool, and fall back to a

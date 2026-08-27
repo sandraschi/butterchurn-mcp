@@ -1,54 +1,66 @@
 import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  type ReactNode,
+	type ReactNode,
+	createContext,
+	useCallback,
+	useContext,
+	useEffect,
+	useMemo,
+	useState,
 } from "react";
-import { loadAllPresets, type PresetEntry } from "./presets";
+import { type PresetEntry, loadAllPresets, loadLazyCategory } from "./presets";
 
 interface PresetsContextValue {
-  presets: PresetEntry[];
-  loading: boolean;
-  error: string | null;
-  refresh: () => Promise<void>;
+	presets: PresetEntry[];
+	loading: boolean;
+	error: string | null;
+	refresh: () => Promise<void>;
+	ensureCategory: (category: string) => Promise<void>;
 }
 
 const PresetsContext = createContext<PresetsContextValue | null>(null);
 
 export function PresetsProvider({ children }: { children: ReactNode }) {
-  const [presets, setPresets] = useState<PresetEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+	const [presets, setPresets] = useState<PresetEntry[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 
-  const refresh = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      setPresets(await loadAllPresets());
-    } catch (err) {
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+	const refresh = useCallback(async () => {
+		setLoading(true);
+		setError(null);
+		try {
+			setPresets(await loadAllPresets());
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		} finally {
+			setLoading(false);
+		}
+	}, []);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+	const ensureCategory = useCallback(async (category: string) => {
+		try {
+			const all = await loadLazyCategory(category);
+			setPresets(all);
+		} catch (err) {
+			setError(err instanceof Error ? err.message : String(err));
+		}
+	}, []);
 
-  const value = useMemo(
-    () => ({ presets, loading, error, refresh }),
-    [presets, loading, error, refresh],
-  );
+	useEffect(() => {
+		void refresh();
+	}, [refresh]);
 
-  return <PresetsContext.Provider value={value}>{children}</PresetsContext.Provider>;
+	const value = useMemo(
+		() => ({ presets, loading, error, refresh, ensureCategory }),
+		[presets, loading, error, refresh, ensureCategory],
+	);
+
+	return (
+		<PresetsContext.Provider value={value}>{children}</PresetsContext.Provider>
+	);
 }
 
 export function usePresets(): PresetsContextValue {
-  const ctx = useContext(PresetsContext);
-  if (!ctx) throw new Error("usePresets must be used within PresetsProvider");
-  return ctx;
+	const ctx = useContext(PresetsContext);
+	if (!ctx) throw new Error("usePresets must be used within PresetsProvider");
+	return ctx;
 }

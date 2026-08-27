@@ -18,10 +18,16 @@
 
 Open **Toolbox** in the webapp to switch engines, preview, and go fullscreen.
 
-The **Presets** page is a live gallery of every butterchurn visualizer: each thumbnail
+The **Presets** page is a live gallery of every visualizer: each thumbnail
 renders its own animated preview (up to ~12 WebGL contexts at once, cards activate as
 you scroll) with search, category/author filters, favorites, a slideshow mode, and a
 one-click fullscreen view.
+
+**Preset library:** besides the bundled butterchurn packs (Main/Extra/MD1/Minimal/…),
+it ships **projectM's MilkDrop presets** — the classic "threads of light" particle
+and geometric look. `ProjectM Original` (513) loads eagerly; the large
+`ProjectM Cream Geo` (996) and `ProjectM Cream Particles` (375) packs lazy-load only
+when you browse them.
 
 ## How it works
 

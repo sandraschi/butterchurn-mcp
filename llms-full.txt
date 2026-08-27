@@ -109,7 +109,7 @@ Settings · Logs · Help.
 | Engine | Era | Runtime | Content |
 |--------|-----|---------|---------|
 | `shader` | modern | WebGL2 GLSL | 6 bundled scenes (gyroid-pulse, neon-tunnel, spectrum-rings, plasma-flow, cosmic-bloom, neon-grid) |
-| `butterchurn` | legacy | butterchurn + MilkDrop | 500+ community presets from `butterchurn-presets` |
+| `butterchurn` | legacy | butterchurn + MilkDrop | ~2,000 presets: `butterchurn-presets` (Main/Extra/Extra2/MD1/Minimal/Non-Minimal) + projectM Original (513, eager) + Cream Geo (996, lazy) + Cream Particles (375, lazy) |
 
 ## Troubleshooting
 

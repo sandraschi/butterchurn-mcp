@@ -87,11 +87,12 @@ function PresetCard({
 }
 
 export default function PresetsPage() {
-	const { presets, loading, error } = usePresets();
+	const { presets, loading, error, ensureCategory } = usePresets();
 	const [query, setQuery] = useState("");
 	const [category, setCategory] = useState("");
 	const [author, setAuthor] = useState("");
 	const [favoritesOnly, setFavoritesOnly] = useState(false);
+	const [loadingLazy, setLoadingLazy] = useState(false);
 	const [favorites, setFavorites] = useState<Set<number>>(() =>
 		loadFavorites(),
 	);
@@ -169,6 +170,20 @@ export default function PresetsPage() {
 	useEffect(() => {
 		setPage(0);
 	}, [query, category, author, favoritesOnly]);
+
+	useEffect(() => {
+		if (!category || category.startsWith("ProjectM Cream") === false) return;
+		let cancelled = false;
+		setLoadingLazy(true);
+		ensureCategory(category)
+			.catch(() => {})
+			.finally(() => {
+				if (!cancelled) setLoadingLazy(false);
+			});
+		return () => {
+			cancelled = true;
+		};
+	}, [category, ensureCategory]);
 
 	return (
 		<div className="h-full flex flex-col overflow-hidden">
@@ -291,9 +306,14 @@ export default function PresetsPage() {
 				{loading && (
 					<p className="text-sm text-zinc-500">Loading preset library…</p>
 				)}
+				{loadingLazy && (
+					<p className="text-sm text-amber-400">
+						Loading ProjectM Cream presets… (large pack, one-time download)
+					</p>
+				)}
 				{error && <p className="text-sm text-red-400">{error}</p>}
 
-				{!loading && filtered.length === 0 && (
+				{!loading && !loadingLazy && filtered.length === 0 && (
 					<p className="text-sm text-zinc-500 text-center py-12">
 						No presets match your filters
 					</p>

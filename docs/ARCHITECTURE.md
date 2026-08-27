@@ -68,4 +68,4 @@ the browser; the Python backend serves APIs and a BPM clock for beat sync.
 | Engine | Runtime | Content |
 |--------|---------|---------|
 | `shader` | WebGL2 GLSL | 6 bundled scenes (see `webapp/src/visualizers/shader/scenes.ts`) |
-| `butterchurn` | butterchurn + MilkDrop | 500+ presets from `butterchurn-presets` (loaded client-side) |
+| `butterchurn` | butterchurn + MilkDrop | ~2,000 presets: `butterchurn-presets` packs (Main/Extra/Extra2/MD1/Minimal/Non-Minimal) + **projectM** Original (513, eager) + Cream Geo (996, lazy) + Cream Particles (375, lazy); loaded client-side |
