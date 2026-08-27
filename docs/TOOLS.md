@@ -51,6 +51,8 @@ On invalid input:
 | `/api/logs` | GET | Recent log entries; filters `limit`, `level`, `search` |
 | `/api/bpm` | GET | Current BPM |
 | `/api/bpm` | POST | Body `{"bpm": 140}`; set BPM (60–200) |
+| `/api/llm/gpus` | GET | Enumerate NVIDIA GPUs (index, name, vramMb) for target-GPU placement |
+| `/api/llm/detect` | GET | Local LLM detection: GPU tier, installed Ollama models, mode |
 
 ## Webapp routes
 
@@ -63,6 +65,6 @@ On invalid input:
 | `/tools` | Tool reference |
 | `/skills` | Bundled skills |
 | `/chat` | Chat page |
-| `/settings` | Settings (LLM provider) |
+| `/settings` | Settings: LLM provider/model (Ollama/LM Studio/vLLM), GPU placement |
 | `/logs` | Server logs |
 | `/help` | Help page |

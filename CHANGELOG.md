@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Local Intelligence (fleet standard)**: Settings auto-detects Ollama/LM Studio/
+  vLLM, resolves the default model resident-first (never evicting a loaded model,
+  via `/api/ps` + `/api/tags`), and on multi-GPU machines routes local models to
+  the secondary card via a GPU selector. New backend `GET /api/llm/gpus` and
+  `GET /api/llm/detect`; canonical `llm_detect.py` + `model-preference.ts` helpers.
 - **projectM presets**: bundled MilkDrop presets from projectM's packs, converted to
   butterchurn JSON. `ProjectM Original` (513) loads eagerly; the large
   `ProjectM Cream Geo` (996) and `ProjectM Cream Particles` (375) packs lazy-load

@@ -80,6 +80,8 @@ Ports are configurable via `BUTTERCHURN_MCP_HOST` / `BUTTERCHURN_MCP_PORT`.
 | `/api/logs?limit&level&search` | GET | Recent server log entries |
 | `/api/bpm` | GET | Current BPM |
 | `/api/bpm` | POST `{"bpm": 140}` | Set BPM (60–200) |
+| `/api/llm/gpus` | GET | Enumerate NVIDIA GPUs (index, name, vramMb) for target-GPU placement |
+| `/api/llm/detect` | GET | Local LLM detection: GPU tier, installed Ollama models, mode |
 
 ## MCP tools
 
@@ -103,6 +105,17 @@ Settings · Logs · Help.
 - **Visualizer** (`/visualizer`): fullscreen canvas; `?engine=shader&scene=…` or
   `?engine=butterchurn&i=<preset-index>`.
 - **Fullscreen** link from a preset jumps to `/visualizer?i=<index>`.
+
+## Local Intelligence (Settings)
+
+- Auto-probes Ollama (11434), LM Studio (1234), vLLM (8000) on mount; shows
+  Detected / Not found / Probing status per provider.
+- Default model resolved **resident-first** (via `/api/ps` + `/api/tags`): never
+  evicts a loaded model; fleet preference order `qwen3.8:27b` → `gemma4:12b` → …
+- Multi-GPU machines show a GPU selector (`llm-gpu-select`, persisted to
+  `llm_gpu`) that routes local models to the secondary card.
+- Persistence keys: `llm_provider`, `llm_model` (localStorage).
+- High-end GPU with no local LLM triggers a "Install Ollama/LM Studio" prompt.
 
 ## Visualizer engines
 

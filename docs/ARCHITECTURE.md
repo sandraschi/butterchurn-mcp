@@ -24,6 +24,8 @@ the browser; the Python backend serves APIs and a BPM clock for beat sync.
 │   ├── /api/logs GET        → log_buffer (in-memory ring)      │
 │   ├── /api/capabilities    → tool surface + features           │
 │   ├── /api/visualizers     → engine catalog                   │
+│   ├── /api/llm/gpus        → nvidia-smi GPU enumeration        │
+│   ├── /api/llm/detect      → GPU tier + installed Ollama models│
 │   ├── /mcp                 → FastMCP HTTP endpoint            │
 │   └── (stdio when run without --serve)                        │
 └───────────────────────────────────────────────────────────────┘
@@ -38,6 +40,10 @@ the browser; the Python backend serves APIs and a BPM clock for beat sync.
 3. The webapp polls `/api/bpm` every 2s and re-times its built-in AudioContext
    beat generator, which drives the visualizer's waveform.
 4. **No video frames cross the wire** — butterchurn renders client-side.
+5. **Local Intelligence**: the webapp probes Ollama/LM Studio/vLLM on mount,
+   resolves the default model **resident-first** (never evicting a loaded model,
+   via `/api/ps` + `/api/tags`), and on multi-GPU machines routes local models to
+   the secondary card via `GET /api/llm/gpus` + the Settings GPU selector.
 
 ## Module layout (`src/butterchurn_mcp/`)
 
@@ -46,6 +52,7 @@ the browser; the Python backend serves APIs and a BPM clock for beat sync.
 | `server.py` | FastMCP instance + `get_bpm` / `set_bpm` tools |
 | `app.py` | FastAPI app, REST endpoints, `/mcp` mount, SPA fallback |
 | `config.py` | `Settings` from environment |
+| `llm_detect.py` | Canonical GPU detection + Ollama model tiering (fleet template) |
 | `bpm_state.py` | In-memory BPM read/write |
 | `log_buffer.py` | In-memory ring of log entries |
 | `webapp_static.py` | Locates the built webapp `dist/` for static serving |

@@ -29,6 +29,10 @@ and geometric look. `ProjectM Original` (513) loads eagerly; the large
 `ProjectM Cream Geo` (996) and `ProjectM Cream Particles` (375) packs lazy-load only
 when you browse them.
 
+The **Settings** page auto-detects local LLM engines (Ollama / LM Studio / vLLM),
+picks a model resident-first (never evicting a loaded one), and on multi-GPU
+machines routes local models to the secondary card via a GPU selector.
+
 ## How it works
 
 The webapp fills the entire browser window with a WebGL canvas running MilkDrop preset visualizations. The built-in beat generator pulses to the current BPM (default 128). Presets cycle through the butterchurn library — click or use arrow keys to switch.
@@ -62,6 +66,9 @@ immediately — no hanging terminal. Requires `bun` on PATH (or auto-detects the
 | `/health` | GET | Server status, version, uptime |
 | `/api/bpm` | GET | Current BPM value |
 | `/api/bpm` | POST `{ "bpm": 140 }` | Set BPM (mixx-dj-mcp sync) |
+| `/api/logs` | GET | Recent server log entries |
+| `/api/llm/gpus` | GET | Enumerate NVIDIA GPUs (index, name, VRAM) for target-GPU placement |
+| `/api/llm/detect` | GET | Local LLM detection: GPU tier + installed Ollama models |
 
 ## MCP tools
 
