@@ -26,7 +26,7 @@ test:
     uv run pytest -v
 
 serve:
-    powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 11124 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
+    powershell.exe -NoProfile -Command "Get-NetTCPConnection -LocalPort 10878 -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }"
     uv run butterchurn-mcp --serve
 
 stdio:
@@ -48,7 +48,7 @@ build-web:
     bun run build
 
 health:
-    curl.exe -s http://127.0.0.1:11124/api/health
+    curl.exe -s http://127.0.0.1:10878/api/health
 
 clean:
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue dist, build, .ruff_cache, .pytest_cache, webapp/node_modules, webapp/dist
