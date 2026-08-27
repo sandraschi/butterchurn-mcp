@@ -60,16 +60,6 @@ app.add_middleware(
 )
 
 
-@app.on_event("startup")
-async def _startup_log() -> None:
-    settings = load_settings()
-    append_log(
-        level="INFO",
-        kind="server",
-        detail=f"butterchurn-mcp v{__version__} listening on {settings.host}:{settings.port}",
-    )
-
-
 @app.get("/health")
 @app.get("/api/health")
 @app.get("/api/v1/health")

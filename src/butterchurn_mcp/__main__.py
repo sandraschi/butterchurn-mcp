@@ -78,6 +78,13 @@ def main() -> None:
     if use_http:
         if args.serve:
             _clear_port(port)
+        from butterchurn_mcp.log_buffer import append_log
+
+        append_log(
+            level="INFO",
+            kind="server",
+            detail=f"butterchurn-mcp started on {host}:{port}",
+        )
         uvicorn.run(
             "butterchurn_mcp.app:app",
             host=host,
