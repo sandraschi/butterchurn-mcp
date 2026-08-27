@@ -1,13 +1,21 @@
 import { motion } from "framer-motion";
-import { CheckCircle2, Cpu, HelpCircle, XCircle } from "lucide-react";
+import { CheckCircle2, Cpu, HelpCircle, Monitor, XCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+	fetchOllamaModels,
+	pickPreferredModel,
+	pickTargetGpu,
+} from "../lib/modelPreference";
+import {
 	type DetectedProvider,
-	type LLMConfig,
+	type GpuInfo,
+	fetchGpus,
 	fetchModels,
 	loadLLMConfig,
+	loadTargetGpuIndex,
 	probeProviders,
 	saveLLMConfig,
+	saveTargetGpuIndex,
 } from "../lib/provider";
 
 export default function SettingsPage() {
@@ -20,6 +28,11 @@ export default function SettingsPage() {
 	const [selectedModel, setSelectedModel] = useState("");
 	const [models, setModels] = useState<string[]>([]);
 	const [probing, setProbing] = useState(true);
+
+	const [gpus, setGpus] = useState<GpuInfo[]>([]);
+	const [targetGpuIndex, setTargetGpuIndex] = useState(-1);
+	const [gpuDetected, setGpuDetected] = useState(false);
+	const [gpuName, setGpuName] = useState("");
 	const mountedRef = useRef(true);
 
 	const loadBpm = useCallback(async () => {
@@ -38,7 +51,21 @@ export default function SettingsPage() {
 
 	useEffect(() => {
 		const saved = loadLLMConfig();
+		const savedGpu = loadTargetGpuIndex();
 		(async () => {
+			// GPU enumeration + hardware detection (target-GPU placement).
+			let target: GpuInfo | null = null;
+			const gpuList = await fetchGpus("");
+			if (!mountedRef.current) return;
+			setGpus(gpuList);
+			if (gpuList.length > 0) {
+				target = pickTargetGpu(gpuList, savedGpu >= 0 ? savedGpu : undefined);
+				if (target) {
+					setTargetGpuIndex(target.index);
+					setGpuDetected(true);
+				}
+			}
+
 			const detected = await probeProviders();
 			if (!mountedRef.current) return;
 			setProviders(detected);
@@ -53,7 +80,23 @@ export default function SettingsPage() {
 					: detectedNames[0] || "";
 			setSelectedProvider(preferred);
 
-			if (preferred) {
+			if (preferred === "Ollama" && gpuList.length > 0) {
+				// Resident-first: never evict a loaded model; respect target GPU VRAM.
+				const state = await fetchOllamaModels();
+				if (!mountedRef.current) return;
+				const resident = pickPreferredModel(
+					state.loaded,
+					state.installed,
+					target,
+				);
+				setModels([...state.installed].sort());
+				const chosen =
+					saved.model && state.installed.includes(saved.model)
+						? saved.model
+						: resident;
+				setSelectedModel(chosen);
+				saveLLMConfig("Ollama", chosen);
+			} else if (preferred) {
 				const p = detected.find((d) => d.name === preferred);
 				if (p) {
 					const ms = await fetchModels(preferred, p.base);
@@ -63,6 +106,13 @@ export default function SettingsPage() {
 						saved.model && ms.includes(saved.model) ? saved.model : ms[0] || "";
 					setSelectedModel(preferredModel);
 				}
+			}
+
+			// GPU Opportunity: high-end GPU present but no local LLM.
+			const highGpu = gpuList.some((g) => g.vramMb >= 12288);
+			if (highGpu && detectedNames.length === 0) {
+				const first = gpuList.find((g) => g.vramMb >= 12288);
+				setGpuName(first?.name ?? "GPU");
 			}
 		})();
 		return () => {
@@ -86,6 +136,11 @@ export default function SettingsPage() {
 	const handleModelChange = (model: string) => {
 		setSelectedModel(model);
 		saveLLMConfig(selectedProvider, model);
+	};
+
+	const handleGpuChange = (index: number) => {
+		setTargetGpuIndex(index);
+		saveTargetGpuIndex(index);
 	};
 
 	const saveBpm = async () => {
@@ -160,6 +215,16 @@ export default function SettingsPage() {
 						to enable AI features.
 					</div>
 				) : null}
+
+				{!probing && gpuDetected && gpuName && detectedCount === 0 && (
+					<div className="bg-blue-950/40 border border-blue-800/40 rounded-lg px-4 py-3 text-sm text-blue-300 flex items-start gap-2">
+						<Monitor size={14} className="mt-0.5 shrink-0" />
+						<span>
+							High-performance GPU ({gpuName}) detected. Install Ollama/LM
+							Studio to unlock AI features for free.
+						</span>
+					</div>
+				)}
 
 				{providers.length > 0 && (
 					<div className="space-y-3">
@@ -236,6 +301,34 @@ export default function SettingsPage() {
 									))}
 								</select>
 							</div>
+							{gpus.length > 1 && (
+								<div>
+									<label
+										htmlFor="llm-gpu-select"
+										className="block text-xs text-zinc-400 mb-1"
+									>
+										GPU
+									</label>
+									<select
+										id="llm-gpu-select"
+										value={targetGpuIndex}
+										onChange={(e) => handleGpuChange(Number(e.target.value))}
+										className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200"
+										data-testid="llm-gpu-select"
+									>
+										{gpus.map((g) => (
+											<option key={g.index} value={g.index}>
+												GPU {g.index} - {g.name} ({Math.round(g.vramMb / 1024)}{" "}
+												GB)
+											</option>
+										))}
+									</select>
+									<p className="text-[10px] text-zinc-600 mt-1">
+										Local models land on this card (avoids evicting the resident
+										agentic model on GPU 0).
+									</p>
+								</div>
+							)}
 						</div>
 
 						{selectedProvider && selectedModel && (

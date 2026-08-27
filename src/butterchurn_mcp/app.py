@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from butterchurn_mcp.bpm_state import read_bpm, write_bpm
 from butterchurn_mcp.config import load_settings
+from butterchurn_mcp.llm_detect import detect, detect_gpu
 from butterchurn_mcp.log_buffer import append_log, list_logs
 from butterchurn_mcp.server import _uptime, mcp
 from butterchurn_mcp.webapp_static import webapp_dist_dir
@@ -170,6 +171,56 @@ async def api_skills():
             if d.is_dir() and skill_md.is_file():
                 skills.append({"name": d.name, "content": skill_md.read_text(encoding="utf-8")})
     return {"skills": skills, "count": len(skills)}
+
+
+@app.get("/api/llm/gpus")
+async def api_llm_gpus():
+    """Enumerate NVIDIA GPUs (index, name, vramMb) for target-GPU placement."""
+    import subprocess
+
+    gpus = []
+    try:
+        out = subprocess.run(
+            ["nvidia-smi", "--query-gpu=index,name,memory.total",
+             "--format=csv,noheader,nounits"],
+            capture_output=True, text=True, timeout=5,
+        )
+        if out.returncode == 0:
+            for line in out.stdout.strip().splitlines():
+                parts = [p.strip() for p in line.split(",")]
+                if len(parts) >= 3:
+                    try:
+                        gpus.append({
+                            "index": int(parts[0]),
+                            "name": parts[1],
+                            "vramMb": int(parts[2]),
+                        })
+                    except (ValueError, IndexError):
+                        continue
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    return {"gpus": gpus, "count": len(gpus)}
+
+
+@app.get("/api/llm/detect")
+async def api_llm_detect():
+    """Local LLM detection + recommendation (GPU tier, installed Ollama models)."""
+    gpu = detect_gpu()
+    result = detect()
+    return {
+        "gpu": {
+            "available": gpu.available,
+            "name": gpu.name,
+            "vramMb": gpu.vram_mb,
+            "vramGb": gpu.vram_gb,
+            "tierLabel": gpu.tier_label,
+        },
+        "ollama": {
+            "available": result.ollama.available,
+            "models": result.ollama.models,
+        },
+        "mode": result.mode,
+    }
 
 
 @app.get("/api/logs")

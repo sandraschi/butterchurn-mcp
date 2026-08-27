@@ -14,6 +14,7 @@ export interface LLMConfig {
 
 const PROVIDER_KEY = "llm_provider";
 const MODEL_KEY = "llm_model";
+const GPU_KEY = "llm_gpu";
 
 export function loadLLMConfig(): { provider: string; model: string } {
 	try {
@@ -30,6 +31,23 @@ export function saveLLMConfig(provider: string, model: string): void {
 	try {
 		localStorage.setItem(PROVIDER_KEY, provider);
 		localStorage.setItem(MODEL_KEY, model);
+	} catch {
+		// storage unavailable
+	}
+}
+
+export function loadTargetGpuIndex(): number {
+	try {
+		const n = Number(localStorage.getItem(GPU_KEY));
+		return Number.isFinite(n) ? n : -1;
+	} catch {
+		return -1;
+	}
+}
+
+export function saveTargetGpuIndex(index: number): void {
+	try {
+		localStorage.setItem(GPU_KEY, String(index));
 	} catch {
 		// storage unavailable
 	}
@@ -105,4 +123,23 @@ export function buildChatUrl(config: { provider: string; base: string }):
 	| null {
 	if (!config.provider || !config.base) return null;
 	return `${config.base}/v1/chat/completions`;
+}
+
+export interface GpuInfo {
+	index: number;
+	name: string;
+	vramMb: number;
+}
+
+/** Enumerate NVIDIA GPUs via backend /api/llm/gpus (falls back to []). */
+export async function fetchGpus(backendBase = ""): Promise<GpuInfo[]> {
+	if (!backendBase) return [];
+	try {
+		const r = await fetch(`${backendBase}/api/llm/gpus`);
+		if (!r.ok) return [];
+		const d = (await r.json()) as { gpus?: GpuInfo[] };
+		return Array.isArray(d.gpus) ? d.gpus : [];
+	} catch {
+		return [];
+	}
 }
