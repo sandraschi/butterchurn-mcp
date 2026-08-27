@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { usePresetCanvas } from "../hooks/usePresetCanvas";
 import { usePresetSlot } from "../hooks/usePresetSlot";
+import { captureCanvas, getThumb, setThumb } from "../lib/presetThumbs";
 import { type PresetEntry, presetGradient } from "../lib/presets";
 
 export default function PresetThumb({
@@ -13,8 +14,27 @@ export default function PresetThumb({
 	const wrapRef = useRef<HTMLDivElement>(null);
 	const [visible, setVisible] = useState(false);
 	const [size, setSize] = useState({ width: 0, height: 0 });
-	const slot = usePresetSlot(visible);
+	const [still, setStill] = useState<string | null>(null);
+	const slot = usePresetSlot(visible && !still);
 	const live = slot && size.width >= 16 && size.height >= 16;
+
+	const canvasRef = usePresetCanvas({
+		preset: live ? entry : null,
+		width: size.width,
+		height: size.height,
+		transitionSec: 0,
+		active: live,
+	});
+
+	useEffect(() => {
+		let cancelled = false;
+		getThumb(entry.name).then((t) => {
+			if (!cancelled && t) setStill(t);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [entry.name]);
 
 	useEffect(() => {
 		const el = wrapRef.current;
@@ -41,13 +61,20 @@ export default function PresetThumb({
 		return () => ro.disconnect();
 	}, []);
 
-	const canvasRef = usePresetCanvas({
-		preset: live ? entry : null,
-		width: size.width,
-		height: size.height,
-		transitionSec: 0,
-		active: live,
-	});
+	useEffect(() => {
+		if (!live || still) return;
+		// Give the preset a moment to settle, then capture a still.
+		const timer = setTimeout(() => {
+			const canvas = canvasRef.current;
+			if (!canvas) return;
+			const dataUrl = captureCanvas(canvas);
+			if (dataUrl) {
+				setStill(dataUrl);
+				void setThumb(entry.name, dataUrl);
+			}
+		}, 1200);
+		return () => clearTimeout(timer);
+	}, [live, still, entry.name, canvasRef]);
 
 	return (
 		<div
@@ -55,7 +82,16 @@ export default function PresetThumb({
 			className={`relative aspect-video overflow-hidden ${className}`}
 			style={{ background: presetGradient(entry.name) }}
 		>
-			{live && (
+			{still && (
+				<img
+					src={still}
+					alt={entry.name}
+					className="w-full h-full block object-cover"
+					loading="lazy"
+					decoding="async"
+				/>
+			)}
+			{live && !still && (
 				<canvas
 					ref={canvasRef}
 					className="w-full h-full block"
