@@ -2,6 +2,8 @@ import clsx from "clsx";
 import { motion } from "framer-motion";
 import {
 	ExternalLink,
+	Eye,
+	EyeOff,
 	Grid3X3,
 	Heart,
 	Pause,
@@ -101,6 +103,7 @@ export default function PresetsPage() {
 	);
 	const [page, setPage] = useState(0);
 	const [slideshow, setSlideshow] = useState(false);
+	const [showPreview, setShowPreview] = useState(true);
 
 	const categories = useMemo(() => getCategories(), []);
 	const authors = useMemo(() => getAuthors(presets), [presets]);
@@ -281,25 +284,34 @@ export default function PresetsPage() {
 					)}
 				</div>
 
-				<div className="h-52 sm:h-64 lg:h-72 border-t border-zinc-800">
-					<PresetPreview
-						preset={selected}
-						className="h-full w-full"
-						transitionSec={slideshow ? 2.5 : 1.5}
-					/>
-				</div>
+				{showPreview && (
+					<div className="h-40 sm:h-48 lg:h-56 border-t border-zinc-800">
+						<PresetPreview
+							preset={selected}
+							className="h-full w-full"
+							transitionSec={slideshow ? 2.5 : 1.5}
+						/>
+					</div>
+				)}
 
-				{selected && (
-					<div className="px-4 py-2 border-t border-zinc-800 bg-zinc-900/80">
-						<p className="text-sm text-zinc-200 truncate">{selected.name}</p>
-						<p className="text-xs text-zinc-500">
-							{selected.author}{" "}
-							<span className="text-[10px] text-zinc-600 ml-1.5 uppercase tracking-wider">
+				<div className="flex items-center justify-between px-4 py-1.5 border-t border-zinc-800 bg-zinc-900/60">
+					<button
+						type="button"
+						onClick={() => setShowPreview((v) => !v)}
+						className="flex items-center gap-1.5 text-xs text-zinc-500 hover:text-zinc-300 transition-colors"
+					>
+						{showPreview ? <EyeOff size={13} /> : <Eye size={13} />}
+						{showPreview ? "Hide preview" : "Show preview"}
+					</button>
+					{selected && (
+						<p className="text-xs text-zinc-300 truncate">
+							{selected.name}{" "}
+							<span className="text-[10px] text-zinc-600 uppercase tracking-wider">
 								{selected.category}
 							</span>
 						</p>
-					</div>
-				)}
+					)}
+				</div>
 			</div>
 
 			<div className="flex-1 overflow-y-auto p-4">
