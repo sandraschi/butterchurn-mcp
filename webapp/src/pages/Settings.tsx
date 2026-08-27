@@ -115,7 +115,7 @@ export default function SettingsPage() {
 		<motion.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			className="p-6 max-w-2xl pb-8 h-full space-y-8"
+			className="p-6 max-w-2xl pb-8 space-y-8"
 		>
 			<div>
 				<h1 className="text-xl font-semibold text-zinc-100">Settings</h1>
@@ -187,10 +187,14 @@ export default function SettingsPage() {
 
 						<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 							<div>
-								<label className="block text-xs text-zinc-400 mb-1">
+								<label
+									htmlFor="llm-provider-select"
+									className="block text-xs text-zinc-400 mb-1"
+								>
 									Provider
 								</label>
 								<select
+									id="llm-provider-select"
 									value={selectedProvider}
 									onChange={(e) => handleProviderChange(e.target.value)}
 									className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200"
@@ -208,10 +212,14 @@ export default function SettingsPage() {
 								</select>
 							</div>
 							<div>
-								<label className="block text-xs text-zinc-400 mb-1">
+								<label
+									htmlFor="llm-model-select"
+									className="block text-xs text-zinc-400 mb-1"
+								>
 									Model
 								</label>
 								<select
+									id="llm-model-select"
 									value={selectedModel}
 									onChange={(e) => handleModelChange(e.target.value)}
 									className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200"
@@ -261,6 +269,7 @@ export default function SettingsPage() {
 						className="w-20 h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200 text-center font-mono"
 					/>
 					<button
+						type="button"
 						onClick={saveBpm}
 						className="h-9 px-4 rounded-lg bg-amber-600 hover:bg-amber-500 text-sm text-white font-medium transition-colors"
 					>

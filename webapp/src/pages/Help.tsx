@@ -6,7 +6,7 @@ export default function HelpPage() {
 		<motion.div
 			initial={{ opacity: 0, y: 8 }}
 			animate={{ opacity: 1, y: 0 }}
-			className="p-6 max-w-3xl pb-8 h-full"
+			className="p-6 max-w-3xl pb-8"
 		>
 			<div className="mb-6 flex items-center gap-2">
 				<HelpCircle className="text-amber-400" size={22} />
@@ -76,7 +76,9 @@ export default function HelpPage() {
 				<section>
 					<h2 className="text-base font-semibold text-zinc-100 mb-2">Launch</h2>
 					<pre className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 text-xs text-zinc-400 overflow-x-auto">
-						{`just serve   # backend :10878\njust web     # frontend :10879\n# or: .\\start.ps1`}
+						{
+							"just serve   # backend :10878\njust web     # frontend :10879\n# or: .\\start.ps1"
+						}
 					</pre>
 				</section>
 			</div>
