@@ -204,9 +204,23 @@ async def api_llm_gpus():
 
 @app.get("/api/llm/detect")
 async def api_llm_detect():
-    """Local LLM detection + recommendation (GPU tier, installed Ollama models)."""
+    """Local LLM detection + recommendation (GPU tier, installed + loaded Ollama models)."""
+    import json as _json
+    import urllib.request
+
     gpu = detect_gpu()
     result = detect()
+
+    # Loaded (resident) models from Ollama /api/ps - probed server-side to avoid
+    # browser CORS hangs against localhost.
+    loaded: list[str] = []
+    try:
+        with urllib.request.urlopen("http://localhost:11434/api/ps", timeout=3) as resp:
+            ps = _json.loads(resp.read())
+        loaded = [m.get("name", "") for m in ps.get("models", []) if m.get("name")]
+    except Exception:
+        loaded = []
+
     return {
         "gpu": {
             "available": gpu.available,
@@ -218,6 +232,7 @@ async def api_llm_detect():
         "ollama": {
             "available": result.ollama.available,
             "models": result.ollama.models,
+            "loaded": loaded,
         },
         "mode": result.mode,
     }

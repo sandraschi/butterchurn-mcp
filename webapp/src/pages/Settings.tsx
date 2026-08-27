@@ -1,11 +1,7 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Cpu, HelpCircle, Monitor, XCircle } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-	fetchOllamaModels,
-	pickPreferredModel,
-	pickTargetGpu,
-} from "../lib/modelPreference";
+import { pickPreferredModel, pickTargetGpu } from "../lib/modelPreference";
 import {
 	type DetectedProvider,
 	type GpuInfo,
@@ -53,66 +49,87 @@ export default function SettingsPage() {
 		const saved = loadLLMConfig();
 		const savedGpu = loadTargetGpuIndex();
 		(async () => {
-			// GPU enumeration + hardware detection (target-GPU placement).
-			let target: GpuInfo | null = null;
-			const gpuList = await fetchGpus("");
-			if (!mountedRef.current) return;
-			setGpus(gpuList);
-			if (gpuList.length > 0) {
-				target = pickTargetGpu(gpuList, savedGpu >= 0 ? savedGpu : undefined);
-				if (target) {
-					setTargetGpuIndex(target.index);
-					setGpuDetected(true);
-				}
-			}
-
-			const detected = await probeProviders();
-			if (!mountedRef.current) return;
-			setProviders(detected);
-			setProbing(false);
-
-			const detectedNames = detected
-				.filter((p) => p.status === "detected")
-				.map((p) => p.name);
-			const preferred =
-				saved.provider && detectedNames.includes(saved.provider)
-					? saved.provider
-					: detectedNames[0] || "";
-			setSelectedProvider(preferred);
-
-			if (preferred === "Ollama" && gpuList.length > 0) {
-				// Resident-first: never evict a loaded model; respect target GPU VRAM.
-				const state = await fetchOllamaModels();
+			try {
+				// GPU enumeration + hardware detection (target-GPU placement).
+				let target: GpuInfo | null = null;
+				const gpuList = await fetchGpus("");
 				if (!mountedRef.current) return;
-				const resident = pickPreferredModel(
-					state.loaded,
-					state.installed,
-					target,
-				);
-				setModels([...state.installed].sort());
-				const chosen =
-					saved.model && state.installed.includes(saved.model)
-						? saved.model
-						: resident;
-				setSelectedModel(chosen);
-				saveLLMConfig("Ollama", chosen);
-			} else if (preferred) {
-				const p = detected.find((d) => d.name === preferred);
-				if (p) {
-					const ms = await fetchModels(preferred, p.base);
-					if (!mountedRef.current) return;
-					setModels(ms);
-					const preferredModel =
-						saved.model && ms.includes(saved.model) ? saved.model : ms[0] || "";
-					setSelectedModel(preferredModel);
+				setGpus(gpuList);
+				if (gpuList.length > 0) {
+					target = pickTargetGpu(gpuList, savedGpu >= 0 ? savedGpu : undefined);
+					if (target) {
+						setTargetGpuIndex(target.index);
+						setGpuDetected(true);
+					}
 				}
-			}
 
-			// GPU Opportunity: high-end GPU present but no local LLM.
-			const highGpu = gpuList.some((g) => g.vramMb >= 12288);
-			if (highGpu && detectedNames.length === 0) {
-				const first = gpuList.find((g) => g.vramMb >= 12288);
-				setGpuName(first?.name ?? "GPU");
+				// Server-side detection: installed + loaded (resident) Ollama models
+				// via the backend, avoiding browser CORS hangs against localhost.
+				let detect: {
+					ollama?: {
+						available?: boolean;
+						models?: string[];
+						loaded?: string[];
+					};
+				} = {};
+				try {
+					const dr = await fetch("/api/llm/detect");
+					if (dr.ok) detect = (await dr.json()) as typeof detect;
+				} catch {
+					// fall through to port probing
+				}
+
+				const detected = await probeProviders();
+				if (!mountedRef.current) return;
+				setProviders(detected);
+				setProbing(false);
+
+				const detectedNames = detected
+					.filter((p) => p.status === "detected")
+					.map((p) => p.name);
+				const preferred =
+					saved.provider && detectedNames.includes(saved.provider)
+						? saved.provider
+						: detectedNames[0] || "";
+				setSelectedProvider(preferred);
+
+				if (preferred === "Ollama") {
+					// Resident-first: never evict a loaded model; respect target GPU VRAM.
+					const installed = detect.ollama?.models ?? [];
+					const loaded = detect.ollama?.loaded ?? [];
+					const resident = pickPreferredModel(loaded, installed, target);
+					setModels([...installed].sort());
+					const chosen =
+						saved.model && installed.includes(saved.model)
+							? saved.model
+							: resident;
+					setSelectedModel(chosen);
+					saveLLMConfig("Ollama", chosen);
+				} else if (preferred) {
+					const p = detected.find((d) => d.name === preferred);
+					if (p) {
+						const ms = await fetchModels(preferred, p.base);
+						if (!mountedRef.current) return;
+						setModels(ms);
+						const preferredModel =
+							saved.model && ms.includes(saved.model)
+								? saved.model
+								: ms[0] || "";
+						setSelectedModel(preferredModel);
+					}
+				}
+
+				// GPU Opportunity: high-end GPU present but no local LLM.
+				const highGpu = gpuList.some((g) => g.vramMb >= 12288);
+				if (highGpu && detectedNames.length === 0) {
+					const first = gpuList.find((g) => g.vramMb >= 12288);
+					setGpuName(first?.name ?? "GPU");
+				}
+			} catch (err) {
+				// eslint-disable-next-line no-console
+				console.error("LLM detection failed", err);
+			} finally {
+				if (mountedRef.current) setProbing(false);
 			}
 		})();
 		return () => {
