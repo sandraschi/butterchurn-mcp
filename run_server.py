@@ -1,4 +1,5 @@
 """PyInstaller entry point — dual transport."""
+
 import os
 import sys
 
