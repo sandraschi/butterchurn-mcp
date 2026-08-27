@@ -17,8 +17,8 @@ const EAGER_PACKS = [
 ];
 
 const LAZY_PACKS: Record<string, string> = {
-	"ProjectM Cream Geo": "/presets/projectmCreamGeo.json",
-	"ProjectM Cream Particles": "/presets/projectmCreamParticles.json",
+	"ProjectM Cream Geo": "/presets/projectmCreamGeo.json.gz",
+	"ProjectM Cream Particles": "/presets/projectmCreamParticles.json.gz",
 };
 
 let cached: PresetEntry[] | null = null;
@@ -31,10 +31,21 @@ async function fetchPack(url: string): Promise<Record<string, unknown>> {
 		try {
 			const res = await fetch(url, { cache: "force-cache" });
 			if (!res.ok) throw new Error(`HTTP ${res.status}`);
-			return (await res.json()) as Record<string, unknown>;
+			const buf = await res.arrayBuffer();
+			let bytes = new Uint8Array(buf);
+			// .gz may be served raw (backend) or auto-decompressed by the dev
+			// server (Vite). Detect gzip by magic bytes (1f 8b) and decompress
+			// only when actually compressed.
+			if (url.endsWith(".gz") && bytes[0] === 0x1f && bytes[1] === 0x8b) {
+				const ds = new DecompressionStream("gzip");
+				bytes = new Uint8Array(
+					await new Response(ds.readable.pipeThrough(ds)).arrayBuffer(),
+				);
+			}
+			const text = new TextDecoder().decode(bytes);
+			return JSON.parse(text) as Record<string, unknown>;
 		} catch (err) {
 			lastErr = err;
-			// Transient network/large-download failures: back off and retry.
 			await new Promise((r) => setTimeout(r, 800 * (i + 1)));
 		}
 	}
@@ -208,7 +219,7 @@ async function loadAllPacks(): Promise<Omit<PresetEntry, "index">[]> {
 		})(),
 		(async () => {
 			try {
-				const raw = await fetchPack("/presets/projectmOriginal.json");
+				const raw = await fetchPack("/presets/projectmOriginal.json.gz");
 				return flattenEntries(raw, "ProjectM Original");
 			} catch {
 				return [];
