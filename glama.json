@@ -1,5 +1,5 @@
 {
   "name": "butterchurn-mcp",
-  "version": "0.1.0",
+  "version": "0.1.0-beta.1",
   "description": "MilkDrop-style audio-reactive WebGL visualizer via butterchurn. FastMCP server with BPM sync endpoint for mixx-dj-mcp."
 }
