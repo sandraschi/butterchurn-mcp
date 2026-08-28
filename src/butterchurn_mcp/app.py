@@ -7,14 +7,14 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from butterchurn_mcp.bpm_state import read_bpm, write_bpm
 from butterchurn_mcp.config import load_settings
 from butterchurn_mcp.llm_detect import detect, detect_gpu
-from butterchurn_mcp.log_buffer import append_log, list_logs
+from butterchurn_mcp.log_buffer import append_log, clear_logs, list_logs, log_stats
 from butterchurn_mcp.server import _uptime, mcp
 from butterchurn_mcp.webapp_static import webapp_dist_dir
 
@@ -59,6 +59,28 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.middleware("http")
+async def _request_logger(request, call_next):
+    import time as _t
+
+    start = _t.time()
+    try:
+        response = await call_next(request)
+    except Exception:
+        append_log(level="ERROR", kind="http", detail=f"{request.method} {request.url.path} failed")
+        raise
+    dur_ms = round((_t.time() - start) * 1000, 1)
+    path = request.url.path
+    if path.startswith("/api/") and path != "/api/logs":
+        append_log(
+            level="INFO" if response.status_code < 400 else "WARNING",
+            kind="http",
+            detail=f"{request.method} {path} -> {response.status_code} ({dur_ms}ms)",
+            meta={"method": request.method, "path": path, "status": response.status_code, "ms": dur_ms},
+        )
+    return response
 
 
 @app.get("/health")
@@ -242,10 +264,76 @@ async def api_llm_detect():
 async def api_logs(
     limit: int = Query(default=100, ge=1, le=500),
     level: str = Query(default=""),
+    kind: str = Query(default=""),
     search: str = Query(default=""),
+    sort: str = Query(default="desc"),
+    after_id: str = Query(default=""),
 ):
-    entries = list_logs(limit=limit, level=level, search=search)
-    return {"entries": entries, "count": len(entries)}
+    entries = list_logs(
+        limit=limit, level=level, kind=kind, search=search, sort=sort, after_id=after_id
+    )
+    stats = log_stats()
+    return {
+        "entries": entries,
+        "count": len(entries),
+        "total": stats["entries"],
+        "limit": limit,
+        "max_entries": stats["max_entries"],
+        "sort": sort,
+    }
+
+
+@app.get("/api/logs/stats")
+async def api_logs_stats():
+    return log_stats()
+
+
+@app.get("/api/logs/export")
+async def api_logs_export(
+    level: str = Query(default=""),
+    kind: str = Query(default=""),
+    search: str = Query(default=""),
+    format: str = Query(default="json"),
+):
+    import json as _json
+
+    entries = list_logs(limit=2000, level=level, kind=kind, search=search, sort="desc")
+    if format == "csv":
+        import csv
+        import io
+
+        buf = io.StringIO()
+        writer = csv.DictWriter(
+            buf, fieldnames=["timestamp", "level", "kind", "detail", "meta"]
+        )
+        writer.writeheader()
+        for e in entries:
+            writer.writerow(
+                {
+                    "timestamp": e["timestamp"],
+                    "level": e["level"],
+                    "kind": e["kind"],
+                    "detail": e["detail"],
+                    "meta": _json.dumps(e.get("meta", {})),
+                }
+            )
+        return Response(
+            content=buf.getvalue(),
+            media_type="text/csv",
+            headers={"Content-Disposition": "attachment; filename=butterchurn-logs.csv"},
+        )
+    return Response(
+        content=_json.dumps({"entries": entries}, indent=2),
+        media_type="application/json",
+        headers={"Content-Disposition": "attachment; filename=butterchurn-logs.json"},
+    )
+
+
+@app.delete("/api/logs")
+async def api_logs_clear():
+    cleared = clear_logs()
+    append_log(level="INFO", kind="server", detail=f"Log buffer cleared ({cleared} entries)")
+    return {"cleared": cleared}
 
 
 @app.get("/api/bpm")

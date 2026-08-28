@@ -3,6 +3,30 @@ import type { PresetEntry } from "../lib/presets";
 
 const BPM = 128;
 
+// Browsers block AudioContext that starts without a user gesture (autoplay
+// policy) - a suspended context produces no audio, so butterchurn renders
+// black. Share ONE context and resume it on the first user interaction.
+let sharedCtx: AudioContext | null = null;
+let resumeBound = false;
+
+function getSharedContext(): AudioContext {
+  if (!sharedCtx) {
+    sharedCtx = new AudioContext();
+  }
+  if (!resumeBound) {
+    resumeBound = true;
+    const resume = () => {
+      if (sharedCtx && sharedCtx.state === "suspended") {
+        void sharedCtx.resume().catch(() => {});
+      }
+    };
+    for (const evt of ["pointerdown", "keydown", "touchstart", "click"]) {
+      window.addEventListener(evt, resume, { once: true });
+    }
+  }
+  return sharedCtx;
+}
+
 function createBeatBuffer(ctx: AudioContext, bpm: number, durSec = 4): AudioBuffer {
   const sampleRate = ctx.sampleRate;
   const length = sampleRate * durSec;
@@ -103,8 +127,7 @@ export function usePresetCanvas({ preset, width, height, transitionSec = 1.5, ac
       const butterchurn = (await import("butterchurn")).default;
       if (cancelled) return;
 
-      const ctx = new AudioContext();
-      if (ctx.state === "suspended") await ctx.resume();
+      const ctx = getSharedContext();
       ctxRef.current = ctx;
 
       const vis = butterchurn.createVisualizer(ctx, canvas, {
@@ -149,7 +172,7 @@ export function usePresetCanvas({ preset, width, height, transitionSec = 1.5, ac
           }
         } catch {}
       }
-      if (ctxRef.current) { void ctxRef.current.close(); ctxRef.current = null; }
+      // NOTE: do NOT close ctxRef - it's a shared, app-lifetime AudioContext.
       visRef.current = null;
     };
   }, [active, width, height, audioInput, audioUrl, connectBeat, connectMic, connectUrl, connectDesktop, onAudioError]);

@@ -28,7 +28,9 @@ def _uptime() -> float:
 @mcp.tool()
 async def get_bpm() -> dict:
     """Get the current BPM driving the visualizer."""
-    return {"success": True, "bpm": read_bpm()}
+    bpm = read_bpm()
+    append_log(level="INFO", kind="tool_call", detail="get_bpm (ok)", meta={"tool": "get_bpm", "bpm": bpm})
+    return {"success": True, "bpm": bpm}
 
 
 @mcp.tool()
@@ -39,7 +41,8 @@ async def set_bpm(bpm: int) -> dict:
     the visualizer to a DJ set's beat.
     """
     if not (60 <= bpm <= 200):
+        append_log(level="ERROR", kind="tool_call", detail=f"set_bpm invalid {bpm}", meta={"tool": "set_bpm", "bpm": bpm})
         return {"success": False, "error": "BPM must be between 60 and 200"}
     write_bpm(bpm)
-    append_log(level="INFO", kind="bpm", detail=f"BPM set to {bpm} via MCP tool")
+    append_log(level="INFO", kind="tool_call", detail=f"set_bpm -> {bpm}", meta={"tool": "set_bpm", "bpm": bpm})
     return {"success": True, "bpm": read_bpm()}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const MAX_ACTIVE = 12;
+const MAX_ACTIVE = 16;
 let activeCount = 0;
 const queue: Array<() => void> = [];
 

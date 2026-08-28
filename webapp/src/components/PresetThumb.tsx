@@ -15,7 +15,7 @@ export default function PresetThumb({
 	const [visible, setVisible] = useState(false);
 	const [size, setSize] = useState({ width: 0, height: 0 });
 	const [still, setStill] = useState<string | null>(null);
-	const slot = usePresetSlot(visible && !still);
+	const slot = usePresetSlot(visible);
 	const live = slot && size.width >= 16 && size.height >= 16;
 
 	const canvasRef = usePresetCanvas({
@@ -41,7 +41,7 @@ export default function PresetThumb({
 		if (!el) return;
 		const io = new IntersectionObserver(
 			(entries) => setVisible(entries[0]?.isIntersecting ?? false),
-			{ rootMargin: "200px" },
+			{ rootMargin: "0px 0px 0px 0px" },
 		);
 		io.observe(el);
 		return () => io.disconnect();
@@ -61,17 +61,15 @@ export default function PresetThumb({
 		return () => ro.disconnect();
 	}, []);
 
+	// Capture a still once after the preset settles; used as a cached fallback
+	// (under the live canvas / for off-screen cards). Does NOT stop animation.
 	useEffect(() => {
 		if (!live || still) return;
-		// Give the preset a moment to settle, then capture a still.
 		const timer = setTimeout(() => {
 			const canvas = canvasRef.current;
 			if (!canvas) return;
 			const dataUrl = captureCanvas(canvas);
-			if (dataUrl) {
-				setStill(dataUrl);
-				void setThumb(entry.name, dataUrl);
-			}
+			if (dataUrl) void setThumb(entry.name, dataUrl);
 		}, 1200);
 		return () => clearTimeout(timer);
 	}, [live, still, entry.name, canvasRef]);
@@ -86,15 +84,15 @@ export default function PresetThumb({
 				<img
 					src={still}
 					alt={entry.name}
-					className="w-full h-full block object-cover"
+					className="absolute inset-0 w-full h-full object-cover"
 					loading="lazy"
 					decoding="async"
 				/>
 			)}
-			{live && !still && (
+			{live && (
 				<canvas
 					ref={canvasRef}
-					className="w-full h-full block"
+					className="absolute inset-0 w-full h-full block"
 					width={size.width}
 					height={size.height}
 				/>
