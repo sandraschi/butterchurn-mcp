@@ -1,0 +1,23 @@
+{
+  "manifest_version": "0.2",
+  "name": "butterchurn-mcp",
+  "version": "0.1.0-beta.1",
+  "description": "MilkDrop-style audio-reactive WebGL visualizer via butterchurn. FastMCP 3.4+ server with BPM sync for mixx-dj-mcp.",
+  "author": { "name": "Sandra Schipal" },
+  "server": {
+    "type": "python",
+    "entry_point": "src/butterchurn_mcp/__main__.py",
+    "mcp_config": {
+      "command": "python",
+      "args": ["-m", "butterchurn_mcp.__main__"],
+      "env": {
+        "PYTHONPATH": "${PWD}",
+        "PYTHONUNBUFFERED": "1"
+      }
+    }
+  },
+  "tools": [
+    { "name": "get_bpm", "description": "Read the current BPM driving the visualizer beat generator." },
+    { "name": "set_bpm", "description": "Set the BPM (60-200) for visualizer beat sync, e.g. from mixx-dj-mcp." }
+  ]
+}

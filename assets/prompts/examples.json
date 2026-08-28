@@ -1,0 +1,913 @@
+[
+  {
+    "name": "set-bpm-001",
+    "description": "Sync visualizer beat to 124 BPM",
+    "prompt": "Sync the visualizer to 124 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 124
+    }
+  },
+  {
+    "name": "set-bpm-002",
+    "description": "Sync visualizer beat to 128 BPM",
+    "prompt": "Sync the visualizer to 128 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 128
+    }
+  },
+  {
+    "name": "set-bpm-003",
+    "description": "Sync visualizer beat to 132 BPM",
+    "prompt": "Sync the visualizer to 132 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 132
+    }
+  },
+  {
+    "name": "set-bpm-004",
+    "description": "Sync visualizer beat to 140 BPM",
+    "prompt": "Sync the visualizer to 140 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 140
+    }
+  },
+  {
+    "name": "set-bpm-005",
+    "description": "Sync visualizer beat to 150 BPM",
+    "prompt": "Sync the visualizer to 150 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 150
+    }
+  },
+  {
+    "name": "set-bpm-006",
+    "description": "Sync visualizer beat to 90 BPM",
+    "prompt": "Sync the visualizer to 90 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 90
+    }
+  },
+  {
+    "name": "set-bpm-007",
+    "description": "Sync visualizer beat to 174 BPM",
+    "prompt": "Sync the visualizer to 174 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 174
+    }
+  },
+  {
+    "name": "set-bpm-008",
+    "description": "Sync visualizer beat to 100 BPM",
+    "prompt": "Sync the visualizer to 100 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 100
+    }
+  },
+  {
+    "name": "set-bpm-009",
+    "description": "Sync visualizer beat to 120 BPM",
+    "prompt": "Sync the visualizer to 120 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 120
+    }
+  },
+  {
+    "name": "set-bpm-010",
+    "description": "Sync visualizer beat to 128 BPM",
+    "prompt": "Sync the visualizer to 128 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 128
+    }
+  },
+  {
+    "name": "set-bpm-011",
+    "description": "Sync visualizer beat to 138 BPM",
+    "prompt": "Sync the visualizer to 138 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 138
+    }
+  },
+  {
+    "name": "set-bpm-012",
+    "description": "Sync visualizer beat to 160 BPM",
+    "prompt": "Sync the visualizer to 160 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 160
+    }
+  },
+  {
+    "name": "set-bpm-013",
+    "description": "Sync visualizer beat to 170 BPM",
+    "prompt": "Sync the visualizer to 170 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 170
+    }
+  },
+  {
+    "name": "set-bpm-014",
+    "description": "Sync visualizer beat to 96 BPM",
+    "prompt": "Sync the visualizer to 96 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 96
+    }
+  },
+  {
+    "name": "set-bpm-015",
+    "description": "Sync visualizer beat to 110 BPM",
+    "prompt": "Sync the visualizer to 110 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 110
+    }
+  },
+  {
+    "name": "set-bpm-016",
+    "description": "Sync visualizer beat to 155 BPM",
+    "prompt": "Sync the visualizer to 155 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 155
+    }
+  },
+  {
+    "name": "set-bpm-017",
+    "description": "Sync visualizer beat to 88 BPM",
+    "prompt": "Sync the visualizer to 88 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 88
+    }
+  },
+  {
+    "name": "set-bpm-018",
+    "description": "Sync visualizer beat to 142 BPM",
+    "prompt": "Sync the visualizer to 142 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 142
+    }
+  },
+  {
+    "name": "set-bpm-019",
+    "description": "Sync visualizer beat to 118 BPM",
+    "prompt": "Sync the visualizer to 118 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 118
+    }
+  },
+  {
+    "name": "set-bpm-020",
+    "description": "Sync visualizer beat to 133 BPM",
+    "prompt": "Sync the visualizer to 133 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 133
+    }
+  },
+  {
+    "name": "get-bpm-001",
+    "description": "Read current tempo",
+    "prompt": "What is the current tempo?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-002",
+    "description": "Read current state",
+    "prompt": "What is the current state?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-003",
+    "description": "Read tempo now",
+    "prompt": "What is the tempo now?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-004",
+    "description": "Read read bpm",
+    "prompt": "What is the read bpm?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-005",
+    "description": "Read bpm value",
+    "prompt": "What is the bpm value?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-006",
+    "description": "Read current beat",
+    "prompt": "What is the current beat?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-007",
+    "description": "Read tempo check",
+    "prompt": "What is the tempo check?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-008",
+    "description": "Read what is the bpm",
+    "prompt": "What is the what is the bpm?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-009",
+    "description": "Read current tempo please",
+    "prompt": "What is the current tempo please?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-010",
+    "description": "Read sync state",
+    "prompt": "What is the sync state?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "set-bpm-invalid-001",
+    "description": "Attempt to set invalid BPM 10",
+    "prompt": "Set the BPM to 10",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 10
+    }
+  },
+  {
+    "name": "set-bpm-invalid-002",
+    "description": "Attempt to set invalid BPM 55",
+    "prompt": "Set the BPM to 55",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 55
+    }
+  },
+  {
+    "name": "set-bpm-invalid-003",
+    "description": "Attempt to set invalid BPM 250",
+    "prompt": "Set the BPM to 250",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 250
+    }
+  },
+  {
+    "name": "set-bpm-invalid-004",
+    "description": "Attempt to set invalid BPM 300",
+    "prompt": "Set the BPM to 300",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 300
+    }
+  },
+  {
+    "name": "set-bpm-invalid-005",
+    "description": "Attempt to set invalid BPM 0",
+    "prompt": "Set the BPM to 0",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 0
+    }
+  },
+  {
+    "name": "set-bpm-invalid-006",
+    "description": "Attempt to set invalid BPM -5",
+    "prompt": "Set the BPM to -5",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": -5
+    }
+  },
+  {
+    "name": "set-bpm-invalid-007",
+    "description": "Attempt to set invalid BPM 59",
+    "prompt": "Set the BPM to 59",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 59
+    }
+  },
+  {
+    "name": "set-bpm-invalid-008",
+    "description": "Attempt to set invalid BPM 201",
+    "prompt": "Set the BPM to 201",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 201
+    }
+  },
+  {
+    "name": "dj-sync-001",
+    "description": "DJ set tempo change to 126 BPM",
+    "prompt": "Set the visualizer beat to 126 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 126
+    }
+  },
+  {
+    "name": "dj-sync-002",
+    "description": "DJ set tempo change to 130 BPM",
+    "prompt": "Set the visualizer beat to 130 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 130
+    }
+  },
+  {
+    "name": "dj-sync-003",
+    "description": "DJ set tempo change to 134 BPM",
+    "prompt": "Set the visualizer beat to 134 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 134
+    }
+  },
+  {
+    "name": "dj-sync-004",
+    "description": "DJ set tempo change to 128 BPM",
+    "prompt": "Set the visualizer beat to 128 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 128
+    }
+  },
+  {
+    "name": "dj-sync-005",
+    "description": "DJ set tempo change to 122 BPM",
+    "prompt": "Set the visualizer beat to 122 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 122
+    }
+  },
+  {
+    "name": "dj-sync-006",
+    "description": "DJ set tempo change to 136 BPM",
+    "prompt": "Set the visualizer beat to 136 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 136
+    }
+  },
+  {
+    "name": "dj-sync-007",
+    "description": "DJ set tempo change to 144 BPM",
+    "prompt": "Set the visualizer beat to 144 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 144
+    }
+  },
+  {
+    "name": "dj-sync-008",
+    "description": "DJ set tempo change to 150 BPM",
+    "prompt": "Set the visualizer beat to 150 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 150
+    }
+  },
+  {
+    "name": "dj-sync-009",
+    "description": "DJ set tempo change to 100 BPM",
+    "prompt": "Set the visualizer beat to 100 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 100
+    }
+  },
+  {
+    "name": "dj-sync-010",
+    "description": "DJ set tempo change to 118 BPM",
+    "prompt": "Set the visualizer beat to 118 BPM for this DJ track",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 118
+    }
+  },
+  {
+    "name": "bpm-boundary-001",
+    "description": "Set BPM at boundary 60",
+    "prompt": "Set the BPM to 60",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 60
+    }
+  },
+  {
+    "name": "bpm-boundary-002",
+    "description": "Set BPM at boundary 200",
+    "prompt": "Set the BPM to 200",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 200
+    }
+  },
+  {
+    "name": "bpm-boundary-003",
+    "description": "Set BPM at boundary 61",
+    "prompt": "Set the BPM to 61",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 61
+    }
+  },
+  {
+    "name": "bpm-boundary-004",
+    "description": "Set BPM at boundary 199",
+    "prompt": "Set the BPM to 199",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 199
+    }
+  },
+  {
+    "name": "guide-001",
+    "description": "Guide user to gallery",
+    "prompt": "Show me the gallery",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-002",
+    "description": "Guide user to fullscreen",
+    "prompt": "Show me the fullscreen",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-003",
+    "description": "Guide user to toolbox",
+    "prompt": "Show me the toolbox",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-004",
+    "description": "Guide user to settings",
+    "prompt": "Show me the settings",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-005",
+    "description": "Guide user to logs",
+    "prompt": "Show me the logs",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-006",
+    "description": "Guide user to shader engine",
+    "prompt": "Show me the shader engine",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-007",
+    "description": "Guide user to retro engine",
+    "prompt": "Show me the retro engine",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "set-bpm-party",
+    "description": "Party mode at high tempo",
+    "prompt": "Crank the visuals to a party tempo, fast beat",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 140
+    }
+  },
+  {
+    "name": "set-bpm-chill",
+    "description": "Chill ambient tempo",
+    "prompt": "Slow the beat down for ambient listening",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 72
+    }
+  },
+  {
+    "name": "set-bpm-techno",
+    "description": "Techno set at 138",
+    "prompt": "Sync to the techno set at 138 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 138
+    }
+  },
+  {
+    "name": "set-bpm-house",
+    "description": "House music at 124",
+    "prompt": "Match the house track at 124 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 124
+    }
+  },
+  {
+    "name": "set-bpm-dnb",
+    "description": "Drum and bass at 174",
+    "prompt": "Drum and bass is fast, set the BPM to 174",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 174
+    }
+  },
+  {
+    "name": "set-bpm-trap",
+    "description": "Trap tempo at 140",
+    "prompt": "Trap runs around 140 BPM, set that",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 140
+    }
+  },
+  {
+    "name": "set-bpm-dubstep",
+    "description": "Dubstep at 140",
+    "prompt": "Dubstep is 140 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 140
+    }
+  },
+  {
+    "name": "set-bpm-lofi",
+    "description": "Lo-fi hip hop at 80",
+    "prompt": "Lo-fi beats are chill, around 80 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 80
+    }
+  },
+  {
+    "name": "set-bpm-reggae",
+    "description": "Reggae at 90",
+    "prompt": "Reggae skank is around 90 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 90
+    }
+  },
+  {
+    "name": "set-bpm-disco",
+    "description": "Disco at 120",
+    "prompt": "Disco is 120 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 120
+    }
+  },
+  {
+    "name": "set-bpm-rock",
+    "description": "Rock at 128",
+    "prompt": "Classic rock tempo is 128",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 128
+    }
+  },
+  {
+    "name": "set-bpm-jungle",
+    "description": "Jungle at 160",
+    "prompt": "Jungle breaks are fast, 160 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 160
+    }
+  },
+  {
+    "name": "set-bpm-garage",
+    "description": "UK garage at 132",
+    "prompt": "UK garage around 132 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 132
+    }
+  },
+  {
+    "name": "set-bpm-afrobeats",
+    "description": "Afrobeats at 105",
+    "prompt": "Afrobeats groove at 105 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 105
+    }
+  },
+  {
+    "name": "set-bpm-house-deep",
+    "description": "Deep house at 122",
+    "prompt": "Deep house sits at 122 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 122
+    }
+  },
+  {
+    "name": "set-bpm-breaks",
+    "description": "Breakbeat at 130",
+    "prompt": "Breakbeat at 130 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 130
+    }
+  },
+  {
+    "name": "set-bpm-minimal",
+    "description": "Minimal techno at 128",
+    "prompt": "Minimal techno at 128 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 128
+    }
+  },
+  {
+    "name": "set-bpm-trance",
+    "description": "Trance at 140",
+    "prompt": "Trance is 140 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 140
+    }
+  },
+  {
+    "name": "get-bpm-before",
+    "description": "Check tempo before change",
+    "prompt": "What tempo are we at before I change it?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-verify",
+    "description": "Verify tempo after change",
+    "prompt": "Confirm the BPM is now set correctly",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "get-bpm-dj",
+    "description": "DJ asks current tempo",
+    "prompt": "What is the current tempo for the DJ set?",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "set-bpm-live-transition",
+    "description": "Live tempo transition",
+    "prompt": "The track is transitioning, move to 132 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 132
+    }
+  },
+  {
+    "name": "set-bpm-cold-open",
+    "description": "Set tempo before track starts",
+    "prompt": "Set the beat before the next track drops",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 128
+    }
+  },
+  {
+    "name": "set-bpm-mashup",
+    "description": "Mashup at mid tempo",
+    "prompt": "Blend these tracks at 128 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 128
+    }
+  },
+  {
+    "name": "get-bpm-display",
+    "description": "Show current BPM on display",
+    "prompt": "Show the current BPM",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "set-bpm-half",
+    "description": "Half-time feel",
+    "prompt": "Set a half-time feel at 70 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 70
+    }
+  },
+  {
+    "name": "set-bpm-double",
+    "description": "Double-time feel",
+    "prompt": "Set a double-time feel at 200 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 200
+    }
+  },
+  {
+    "name": "set-bpm-rest",
+    "description": "Rest tempo during break",
+    "prompt": "Slow to a rest tempo during the break",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 80
+    }
+  },
+  {
+    "name": "get-bpm-meter",
+    "description": "Read the beat meter",
+    "prompt": "Read the current beat meter",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "set-bpm-finale",
+    "description": "Finale energy up",
+    "prompt": "Bring the finale up to 150 BPM",
+    "tool": "set_bpm",
+    "arguments": {
+      "bpm": 150
+    }
+  },
+  {
+    "name": "guide-page-001",
+    "description": "Guide user to: open the preset gallery",
+    "prompt": "open the preset gallery",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-002",
+    "description": "Guide user to: go to the toolbox",
+    "prompt": "go to the toolbox",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-003",
+    "description": "Guide user to: show the fullscreen visualizer",
+    "prompt": "show the fullscreen visualizer",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-004",
+    "description": "Guide user to: open settings",
+    "prompt": "open settings",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-005",
+    "description": "Guide user to: view the logs",
+    "prompt": "view the logs",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-006",
+    "description": "Guide user to: see the help page",
+    "prompt": "see the help page",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-007",
+    "description": "Guide user to: open the chat page",
+    "prompt": "open the chat page",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-008",
+    "description": "Guide user to: show the tools list",
+    "prompt": "show the tools list",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-009",
+    "description": "Guide user to: view the dashboard",
+    "prompt": "view the dashboard",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-010",
+    "description": "Guide user to: open the skills page",
+    "prompt": "open the skills page",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-011",
+    "description": "Guide user to: browse the shader scenes",
+    "prompt": "browse the shader scenes",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-012",
+    "description": "Guide user to: browse the retro presets",
+    "prompt": "browse the retro presets",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-013",
+    "description": "Guide user to: search for a preset",
+    "prompt": "search for a preset",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-014",
+    "description": "Guide user to: star a preset as favorite",
+    "prompt": "star a preset as favorite",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-015",
+    "description": "Guide user to: run the slideshow",
+    "prompt": "run the slideshow",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-016",
+    "description": "Guide user to: pick a random preset",
+    "prompt": "pick a random preset",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-017",
+    "description": "Guide user to: filter presets by category",
+    "prompt": "filter presets by category",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-018",
+    "description": "Guide user to: filter by author",
+    "prompt": "filter by author",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-019",
+    "description": "Guide user to: open a specific preset fullscreen",
+    "prompt": "open a specific preset fullscreen",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-020",
+    "description": "Guide user to: show the cream of the crop geometric pack",
+    "prompt": "show the cream of the crop geometric pack",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-021",
+    "description": "Guide user to: show the particles pack",
+    "prompt": "show the particles pack",
+    "tool": "get_bpm",
+    "arguments": {}
+  },
+  {
+    "name": "guide-page-022",
+    "description": "Guide user to: show the original pack",
+    "prompt": "show the original pack",
+    "tool": "get_bpm",
+    "arguments": {}
+  }
+]
