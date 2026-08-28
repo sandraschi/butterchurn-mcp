@@ -48,11 +48,14 @@ On invalid input:
 | `/api/dashboard` | GET | BPM, uptime, preset library, engines, companion |
 | `/api/tools` | GET | MCP tool list |
 | `/api/skills` | GET | Bundled skills (if any) |
-| `/api/logs` | GET | Recent log entries; filters `limit`, `level`, `search` |
+| `/api/logs` | GET | Query logs: `limit`, `level`, `kind`, `search`, `sort`, `after_id` |
+| `/api/logs/stats` | GET | Ring buffer size / max entries |
+| `/api/logs/export` | GET | Download logs as JSON (`format=json`) or CSV (`format=csv`) |
+| `/api/logs` | DELETE | Clear the log buffer |
 | `/api/bpm` | GET | Current BPM |
 | `/api/bpm` | POST | Body `{"bpm": 140}`; set BPM (60–200) |
 | `/api/llm/gpus` | GET | Enumerate NVIDIA GPUs (index, name, vramMb) for target-GPU placement |
-| `/api/llm/detect` | GET | Local LLM detection: GPU tier, installed Ollama models, mode |
+| `/api/llm/detect` | GET | Local LLM detection: GPU tier, installed + loaded Ollama models, mode |
 
 ## Webapp routes
 
@@ -66,5 +69,5 @@ On invalid input:
 | `/skills` | Bundled skills |
 | `/chat` | Chat page |
 | `/settings` | Settings: LLM provider/model (Ollama/LM Studio/vLLM), GPU placement |
-| `/logs` | Server logs |
+| `/logs` | Server logs: live tail, level + kind filters, search, export, clear |
 | `/help` | Help page |

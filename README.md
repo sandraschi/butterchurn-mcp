@@ -66,9 +66,12 @@ immediately — no hanging terminal. Requires `bun` on PATH (or auto-detects the
 | `/health` | GET | Server status, version, uptime |
 | `/api/bpm` | GET | Current BPM value |
 | `/api/bpm` | POST `{ "bpm": 140 }` | Set BPM (mixx-dj-mcp sync) |
-| `/api/logs` | GET | Recent server log entries |
+| `/api/logs` | GET | Query log entries (`limit`, `level`, `kind`, `search`, `sort`, `after_id`) |
+| `/api/logs/stats` | GET | Ring buffer size / max entries |
+| `/api/logs/export` | GET | Download logs as JSON or CSV |
+| `/api/logs` | DELETE | Clear the log buffer |
 | `/api/llm/gpus` | GET | Enumerate NVIDIA GPUs (index, name, VRAM) for target-GPU placement |
-| `/api/llm/detect` | GET | Local LLM detection: GPU tier + installed Ollama models |
+| `/api/llm/detect` | GET | Local LLM detection: GPU tier + installed/loaded Ollama models |
 
 ## MCP tools
 

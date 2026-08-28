@@ -21,11 +21,13 @@ the browser; the Python backend serves APIs and a BPM clock for beat sync.
 │                                                               │
 │  FastAPI app                                                  │
 │   ├── /api/bpm  GET/POST   → bpm_state (in-memory int)        │
-│   ├── /api/logs GET        → log_buffer (in-memory ring)      │
+│   ├── /api/logs GET/DELETE → log_buffer (in-memory ring, 2000)│
+│   ├── /api/logs/stats|export → ring stats / JSON·CSV download │
 │   ├── /api/capabilities    → tool surface + features           │
 │   ├── /api/visualizers     → engine catalog                   │
 │   ├── /api/llm/gpus        → nvidia-smi GPU enumeration        │
-│   ├── /api/llm/detect      → GPU tier + installed Ollama models│
+│   ├── /api/llm/detect      → GPU tier + installed/loaded models│
+│   ├── request middleware   → logs every /api/* call            │
 │   ├── /mcp                 → FastMCP HTTP endpoint            │
 │   └── (stdio when run without --serve)                        │
 └───────────────────────────────────────────────────────────────┘
@@ -44,6 +46,9 @@ the browser; the Python backend serves APIs and a BPM clock for beat sync.
    resolves the default model **resident-first** (never evicting a loaded model,
    via `/api/ps` + `/api/tags`), and on multi-GPU machines routes local models to
    the secondary card via `GET /api/llm/gpus` + the Settings GPU selector.
+6. **Logging**: a request middleware logs every `/api/*` call (kind `http`);
+   MCP tool calls log as `tool_call`; startup and BPM changes log as `server` /
+   `bpm`. All land in the in-memory ring buffer (2000 max, `BUTTERCHURN_LOG_MAX_ENTRIES`).
 
 ## Module layout (`src/butterchurn_mcp/`)
 
