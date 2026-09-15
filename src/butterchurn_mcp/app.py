@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -202,7 +203,8 @@ async def api_llm_gpus():
 
     gpus = []
     try:
-        out = subprocess.run(
+        out = await asyncio.to_thread(
+            subprocess.run,
             ["nvidia-smi", "--query-gpu=index,name,memory.total",
              "--format=csv,noheader,nounits"],
             capture_output=True, text=True, timeout=5,
