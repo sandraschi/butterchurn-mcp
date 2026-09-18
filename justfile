@@ -36,16 +36,13 @@ install:
     uv sync
 
 install-web:
-    Set-Location '{{justfile_directory()}}\webapp'
-    bun install
+    Set-Location '{{justfile_directory()}}\webapp'; bun install
 
 web:
-    Set-Location '{{justfile_directory()}}\webapp'
-    bun run dev
+    Set-Location '{{justfile_directory()}}\webapp'; bun run dev
 
 build-web:
-    Set-Location '{{justfile_directory()}}\webapp'
-    bun run build
+    Set-Location '{{justfile_directory()}}\webapp'; bun run build
 
 health:
     curl.exe -s http://127.0.0.1:10878/api/health
