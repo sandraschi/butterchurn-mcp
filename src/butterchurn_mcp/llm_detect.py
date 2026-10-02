@@ -24,11 +24,11 @@ from typing import Any
 logger = logging.getLogger("llm-detect")
 
 TIERS: list[tuple[int, int, str, list[str]]] = [
-    (32000, 5, "Monster",    ["qwen2.5-coder:32b-instruct-q4_K_M", "deepseek-r1:32b", "gemma4:26b"]),
-    (20000, 4, "High-end",   ["gemma4:12b", "qwen2.5-coder:14b", "llama3.1:8b"]),
-    (14000, 3, "Mid",        ["qwen2.5-coder:7b", "mistral:7b", "llama3.2:3b"]),
-    (10000, 2, "Entry",      ["llama3.2:3b", "qwen2.5-coder:1.5b"]),
-    (6000,  1, "Minimal",    ["llama3.2:1b", "tinyllama:latest", "gemma3:1b"]),
+    (32000, 5, "Monster", ["qwen2.5-coder:32b-instruct-q4_K_M", "deepseek-r1:32b", "gemma4:26b"]),
+    (20000, 4, "High-end", ["gemma4:12b", "qwen2.5-coder:14b", "llama3.1:8b"]),
+    (14000, 3, "Mid", ["qwen2.5-coder:7b", "mistral:7b", "llama3.2:3b"]),
+    (10000, 2, "Entry", ["llama3.2:3b", "qwen2.5-coder:1.5b"]),
+    (6000, 1, "Minimal", ["llama3.2:1b", "tinyllama:latest", "gemma3:1b"]),
 ]
 
 CLOUD_DEFAULTS = {
@@ -99,17 +99,21 @@ class RecommendResult:
 def detect_gpu() -> GpuInfo:
     try:
         out = subprocess.run(
-            ["nvidia-smi", "--query-gpu=name,memory.total,driver_version",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=5,
+            ["nvidia-smi", "--query-gpu=name,memory.total,driver_version", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if out.returncode != 0:
             return GpuInfo()
         parts = [p.strip() for p in out.stdout.strip().split(", ")]
         vram = int(parts[1])
         return GpuInfo(
-            available=True, name=parts[0], vram_mb=vram,
-            vram_gb=round(vram / 1024, 1), driver=parts[2] if len(parts) > 2 else "",
+            available=True,
+            name=parts[0],
+            vram_mb=vram,
+            vram_gb=round(vram / 1024, 1),
+            driver=parts[2] if len(parts) > 2 else "",
         )
     except FileNotFoundError:
         return GpuInfo()

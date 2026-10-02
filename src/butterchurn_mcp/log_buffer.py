@@ -56,9 +56,7 @@ def list_logs(
         items = [
             e
             for e in items
-            if needle in e["detail"].lower()
-            or needle in e["kind"].lower()
-            or needle in str(e.get("meta", {})).lower()
+            if needle in e["detail"].lower() or needle in e["kind"].lower() or needle in str(e.get("meta", {})).lower()
         ]
     if after_id:
         try:

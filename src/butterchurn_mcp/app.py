@@ -205,20 +205,23 @@ async def api_llm_gpus():
     try:
         out = await asyncio.to_thread(
             subprocess.run,
-            ["nvidia-smi", "--query-gpu=index,name,memory.total",
-             "--format=csv,noheader,nounits"],
-            capture_output=True, text=True, timeout=5,
+            ["nvidia-smi", "--query-gpu=index,name,memory.total", "--format=csv,noheader,nounits"],
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if out.returncode == 0:
             for line in out.stdout.strip().splitlines():
                 parts = [p.strip() for p in line.split(",")]
                 if len(parts) >= 3:
                     try:
-                        gpus.append({
-                            "index": int(parts[0]),
-                            "name": parts[1],
-                            "vramMb": int(parts[2]),
-                        })
+                        gpus.append(
+                            {
+                                "index": int(parts[0]),
+                                "name": parts[1],
+                                "vramMb": int(parts[2]),
+                            }
+                        )
                     except (ValueError, IndexError):
                         continue
     except (FileNotFoundError, subprocess.TimeoutExpired):
@@ -271,9 +274,7 @@ async def api_logs(
     sort: str = Query(default="desc"),
     after_id: str = Query(default=""),
 ):
-    entries = list_logs(
-        limit=limit, level=level, kind=kind, search=search, sort=sort, after_id=after_id
-    )
+    entries = list_logs(limit=limit, level=level, kind=kind, search=search, sort=sort, after_id=after_id)
     stats = log_stats()
     return {
         "entries": entries,
@@ -305,9 +306,7 @@ async def api_logs_export(
         import io
 
         buf = io.StringIO()
-        writer = csv.DictWriter(
-            buf, fieldnames=["timestamp", "level", "kind", "detail", "meta"]
-        )
+        writer = csv.DictWriter(buf, fieldnames=["timestamp", "level", "kind", "detail", "meta"])
         writer.writeheader()
         for e in entries:
             writer.writerow(
@@ -355,19 +354,19 @@ async def set_bpm(payload: BpmPayload):
 app.mount("/mcp", mcp_http)
 
 _webapp_dir = webapp_dist_dir()
-if _webapp_dir:
+if _webapp_dir is not None:
     assets_dir = _webapp_dir / "assets"
     if assets_dir.is_dir():
         app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="assets")
 
     @app.get("/{spa_path:path}")
-    async def spa_fallback(spa_path: str):
+    async def spa_fallback(spa_path: str, _root: Path = _webapp_dir):
         if spa_path.startswith(("api/", "mcp", "docs", "redoc", "openapi.json", "health")):
             return JSONResponse({"success": False, "message": "Not found"}, status_code=404)
-        candidate = _webapp_dir / spa_path
+        candidate = _root / spa_path
         if candidate.is_file():
             return FileResponse(candidate)
-        index = _webapp_dir / "index.html"
+        index = _root / "index.html"
         if index.is_file():
             return FileResponse(index)
         return JSONResponse({"success": False, "message": "Webapp not built"}, status_code=404)
