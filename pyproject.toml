@@ -19,6 +19,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+# Kept for CI (`uv sync --extra dev` in ci.yml.template). Local `uv sync`
+# uses [dependency-groups] dev below - keep both lists in sync.
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "ruff>=0.16.0,<0.17"]
 
 [project.urls]
@@ -41,9 +43,24 @@ line-length = 120
 target-version = "py312"
 
 [tool.ruff.lint]
-select = ["E", "F", "W", "I", "B", "S", "UP", "RUF"]
+select = ["E", "F", "W", "I", "B", "S", "UP", "RUF", "T20"]
 ignore = ["S101", "B008", "S106", "S110", "S112", "S101", "B008", "S106", "S110", "S112", "RUF012", "S603", "S607", "S324", "E402", "E501", "S310"]
+
+[tool.ruff.lint.per-file-ignores]
+"src/butterchurn_mcp/__main__.py" = ["T201"]
+"src/butterchurn_mcp/llm_detect.py" = ["T201"]
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.24",
+    "ruff>=0.16.0,<0.17",
+    "pyright>=1.1.390",
+    "pillow>=12.3.0",
+    "pytesseract>=0.3.13",
+    "pywinauto>=0.6.9",
+]
