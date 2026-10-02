@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (assfix 2026-10-02, first full pass)
+- `butterchurn_shutdown` tool (confirm-gated, DESTRUCTIVE) + tool annotations and docstring standard sections
+- Smoke suite `tests/test_smoke.py` (BPM roundtrip, shutdown gate, health/capabilities)
+- `skills/butterchurn-operator/SKILL.md`, `.github/workflows/ci.yml`, `.pre-commit-config.yaml` (fleet templates)
+- Biome 2 adoption (`biome.json`, `biome:ci` script) + fixed 60 diagnostics incl. 2 real React hook bugs and a nullable-preset crash
+- `pyright` in dev deps (five-gate now fully green)
+
 ### Added
 - **Server logging (fleet WEBAPP_LOGS_PAGE)**: backend logs every `/api/*`
   request (kind `http`) via middleware, MCP tool calls (`tool_call`), BPM changes

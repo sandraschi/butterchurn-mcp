@@ -7,7 +7,8 @@
     "dev": "vite --port 10879 --host",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 10879",
-    "check": "tsc --noEmit"
+    "check": "tsc --noEmit",
+    "biome:ci": "biome check src"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.62.8",
@@ -21,6 +22,7 @@
     "react-router-dom": "^6.27.0"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
     "@tailwindcss/vite": "^4.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
