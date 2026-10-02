@@ -1,10 +1,10 @@
 import { Link, useSearchParams } from "react-router-dom";
 import Visualizer from "../components/Visualizer";
+import { useAudioEngine } from "../visualizers/audio/useAudioEngine";
+import { loadLastEngine, loadLastScene } from "../visualizers/registry";
 import ShaderCanvas from "../visualizers/shader/ShaderCanvas";
 import { getShaderScene } from "../visualizers/shader/scenes";
-import { loadLastEngine, loadLastScene } from "../visualizers/registry";
 import type { VisualizerEngineId } from "../visualizers/types";
-import { useAudioEngine } from "../visualizers/audio/useAudioEngine";
 
 function ShaderFullscreen({ sceneId }: { sceneId: string }) {
   const scene = getShaderScene(sceneId);
@@ -33,10 +33,12 @@ function ShaderFullscreen({ sceneId }: { sceneId: string }) {
 
 export default function VisualizerPage() {
   const [searchParams] = useSearchParams();
-  const engine = (searchParams.get("engine") as VisualizerEngineId) || loadLastEngine();
+  const engine =
+    (searchParams.get("engine") as VisualizerEngineId) || loadLastEngine();
 
   if (engine === "shader") {
-    const sceneId = searchParams.get("scene") || loadLastScene("shader") || "gyroid-pulse";
+    const sceneId =
+      searchParams.get("scene") || loadLastScene("shader") || "gyroid-pulse";
     return <ShaderFullscreen sceneId={sceneId} />;
   }
 

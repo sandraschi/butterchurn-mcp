@@ -1,9 +1,9 @@
+import { Mic, Monitor, Radio, Volume2 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { Mic, Volume2, Radio, Monitor } from "lucide-react";
-import { usePresetCanvas, type AudioInput } from "../hooks/usePresetCanvas";
-import { loadLastPresetIndex, saveLastPresetIndex } from "../lib/presets";
+import { type AudioInput, usePresetCanvas } from "../hooks/usePresetCanvas";
 import { usePresets } from "../lib/PresetsContext";
+import { loadLastPresetIndex, saveLastPresetIndex } from "../lib/presets";
 
 const BPM_POLL_INTERVAL = 2000;
 const OVERLAY_FADE_MS = 2000;
@@ -32,12 +32,15 @@ export default function Visualizer() {
   const [overlay, setOverlay] = useState("");
   const [bpmDisplay, setBpmDisplay] = useState(128);
   const [audioInput, setAudioInput] = useState<AudioInput>("beat");
-  const [audioUrl, setAudioUrl] = useState(() => localStorage.getItem("viz:audioUrl") || "");
+  const [audioUrl, setAudioUrl] = useState(
+    () => localStorage.getItem("viz:audioUrl") || "",
+  );
   const [audioError, setAudioError] = useState<string | null>(null);
   const bpmRef = useRef(128);
   const overlayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const preset = presets.find((p) => p.index === presetIdx) ?? presets[0] ?? null;
+  const preset =
+    presets.find((p) => p.index === presetIdx) ?? presets[0] ?? null;
 
   useEffect(() => {
     const fromUrl = Number(searchParams.get("i"));
@@ -49,7 +52,10 @@ export default function Visualizer() {
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect;
-      setSize({ width: Math.max(16, Math.floor(width)), height: Math.max(16, Math.floor(height)) });
+      setSize({
+        width: Math.max(16, Math.floor(width)),
+        height: Math.max(16, Math.floor(height)),
+      });
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -124,7 +130,10 @@ export default function Visualizer() {
   }
 
   return (
-    <div ref={wrapRef} className="relative w-full h-full bg-black overflow-hidden">
+    <div
+      ref={wrapRef}
+      className="relative w-full h-full bg-black overflow-hidden"
+    >
       <canvas
         ref={canvasRef}
         className="w-full h-full block cursor-pointer"
@@ -139,7 +148,10 @@ export default function Visualizer() {
         <div className="pointer-events-auto flex flex-wrap items-center gap-2">
           <button
             type="button"
-            onClick={() => { setAudioInput((v) => (v === "beat" ? "mic" : "beat")); setAudioError(null); }}
+            onClick={() => {
+              setAudioInput((v) => (v === "beat" ? "mic" : "beat"));
+              setAudioError(null);
+            }}
             className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
               audioInput === "mic"
                 ? "bg-amber-500/20 text-amber-300 border border-amber-500/30"
@@ -147,7 +159,11 @@ export default function Visualizer() {
             }`}
             title={audioInput === "mic" ? "Using microphone" : "Use microphone"}
           >
-            {audioInput === "mic" ? <Mic size={12} className="animate-pulse" /> : <Volume2 size={12} />}
+            {audioInput === "mic" ? (
+              <Mic size={12} className="animate-pulse" />
+            ) : (
+              <Volume2 size={12} />
+            )}
             {audioInput === "mic" ? "Mic live" : "Mic"}
           </button>
           <button
@@ -169,7 +185,10 @@ export default function Visualizer() {
           {audioInput !== "url" ? (
             <button
               type="button"
-              onClick={() => { setAudioInput("url"); setAudioError(null); }}
+              onClick={() => {
+                setAudioInput("url");
+                setAudioError(null);
+              }}
               className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium bg-black/60 text-zinc-300 hover:bg-black/80 transition-colors"
               title="Stream from URL"
             >
@@ -223,7 +242,12 @@ export default function Visualizer() {
         {audioInput !== "beat" && (
           <div className="bg-emerald-900/40 backdrop-blur-sm rounded-lg px-3 py-1 text-[10px] text-emerald-300 flex items-center gap-1.5">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            {audioInput === "mic" ? "Microphone" : audioInput === "desktop" ? "Desktop audio" : "Streaming"} — click Beat to reset
+            {audioInput === "mic"
+              ? "Microphone"
+              : audioInput === "desktop"
+                ? "Desktop audio"
+                : "Streaming"}{" "}
+            — click Beat to reset
           </div>
         )}
         {audioError && (
@@ -238,8 +262,12 @@ export default function Visualizer() {
         }`}
       >
         <div className="bg-black/70 backdrop-blur-md rounded-xl px-6 py-3 text-center max-w-lg">
-          <p className="text-white text-lg font-medium tracking-wide">{overlay}</p>
-          <p className="text-white/40 text-xs mt-0.5">Click or ← → · {posInList + 1} of {presets.length}</p>
+          <p className="text-white text-lg font-medium tracking-wide">
+            {overlay}
+          </p>
+          <p className="text-white/40 text-xs mt-0.5">
+            Click or ← → · {posInList + 1} of {presets.length}
+          </p>
         </div>
       </div>
     </div>

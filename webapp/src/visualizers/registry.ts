@@ -4,7 +4,8 @@ export const VISUALIZER_ENGINES: VisualizerEngine[] = [
   {
     id: "shader",
     name: "GLSL Shaders",
-    description: "WebGL2 fragment shaders — raymarch, gyroid, neon grids. Audio-reactive uniforms.",
+    description:
+      "WebGL2 fragment shaders — raymarch, gyroid, neon grids. Audio-reactive uniforms.",
     era: "modern",
     route: "/toolbox?engine=shader",
   },
@@ -37,6 +38,9 @@ export function loadLastScene(engine: VisualizerEngineId): string {
   return localStorage.getItem(`${SCENE_KEY}:${engine}`) ?? "";
 }
 
-export function saveLastScene(engine: VisualizerEngineId, sceneId: string): void {
+export function saveLastScene(
+  engine: VisualizerEngineId,
+  sceneId: string,
+): void {
   localStorage.setItem(`${SCENE_KEY}:${engine}`, sceneId);
 }

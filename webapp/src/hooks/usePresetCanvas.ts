@@ -27,7 +27,11 @@ function getSharedContext(): AudioContext {
   return sharedCtx;
 }
 
-function createBeatBuffer(ctx: AudioContext, bpm: number, durSec = 4): AudioBuffer {
+function createBeatBuffer(
+  ctx: AudioContext,
+  bpm: number,
+  durSec = 4,
+): AudioBuffer {
   const sampleRate = ctx.sampleRate;
   const length = sampleRate * durSec;
   const buffer = ctx.createBuffer(1, length, sampleRate);
@@ -54,9 +58,27 @@ interface Options {
   onAudioError?: (msg: string) => void;
 }
 
-export function usePresetCanvas({ preset, width, height, transitionSec = 1.5, active = true, audioInput = "beat", audioUrl = "", onAudioError }: Options) {
+// Minimal structural type for the untyped butterchurn visualizer instance.
+interface ButterchurnVisualizer {
+  connectAudio: (src: AudioNode) => void;
+  loadPreset: (preset: unknown, transitionSec: number) => void;
+  launchSongTitleAnim: (name: string) => void;
+  render: () => void;
+  setRendererSize: (width: number, height: number) => void;
+}
+
+export function usePresetCanvas({
+  preset,
+  width,
+  height,
+  transitionSec = 1.5,
+  active = true,
+  audioInput = "beat",
+  audioUrl = "",
+  onAudioError,
+}: Options) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const visRef = useRef<any>(null);
+  const visRef = useRef<ButterchurnVisualizer | null>(null);
   const ctxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioNode | null>(null);
   const micRef = useRef<MediaStream | null>(null);
@@ -64,57 +86,77 @@ export function usePresetCanvas({ preset, width, height, transitionSec = 1.5, ac
   const rafRef = useRef(0);
   const readyRef = useRef(false);
 
-  const connectBeat = useCallback((ctx: AudioContext, vis: any) => {
-    const buffer = createBeatBuffer(ctx, BPM);
-    const src = ctx.createBufferSource();
-    src.buffer = buffer;
-    src.loop = true;
-    src.start();
-    sourceRef.current = src;
-    vis.connectAudio(src);
-  }, []);
-
-  const connectMic = useCallback(async (ctx: AudioContext, vis: any) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      micRef.current = stream;
-      const src = ctx.createMediaStreamSource(stream);
+  const connectBeat = useCallback(
+    (ctx: AudioContext, vis: ButterchurnVisualizer) => {
+      const buffer = createBeatBuffer(ctx, BPM);
+      const src = ctx.createBufferSource();
+      src.buffer = buffer;
+      src.loop = true;
+      src.start();
       sourceRef.current = src;
       vis.connectAudio(src);
-    } catch (err) {
-      onAudioError?.(err instanceof Error ? err.message : "Mic access denied");
-    }
-  }, [onAudioError]);
+    },
+    [],
+  );
 
-  const connectUrl = useCallback(async (ctx: AudioContext, vis: any, url: string) => {
-    try {
-      const audio = new Audio(url);
-      audio.crossOrigin = "anonymous";
-      audio.loop = true;
-      audioElRef.current = audio;
-      const src = ctx.createMediaElementSource(audio);
-      sourceRef.current = src;
-      vis.connectAudio(src);
-      await audio.play();
-    } catch (err) {
-      onAudioError?.(err instanceof Error ? err.message : "Failed to play audio URL");
-    }
-  }, [onAudioError]);
+  const connectMic = useCallback(
+    async (ctx: AudioContext, vis: ButterchurnVisualizer) => {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+        micRef.current = stream;
+        const src = ctx.createMediaStreamSource(stream);
+        sourceRef.current = src;
+        vis.connectAudio(src);
+      } catch (err) {
+        onAudioError?.(
+          err instanceof Error ? err.message : "Mic access denied",
+        );
+      }
+    },
+    [onAudioError],
+  );
 
-  const connectDesktop = useCallback(async (ctx: AudioContext, vis: any) => {
-    try {
-      const stream = await navigator.mediaDevices.getDisplayMedia({
-        audio: true,
-        video: false,
-      });
-      micRef.current = stream;
-      const src = ctx.createMediaStreamSource(stream);
-      sourceRef.current = src;
-      vis.connectAudio(src);
-    } catch (err) {
-      onAudioError?.(err instanceof Error ? err.message : "Desktop audio cancelled/denied");
-    }
-  }, [onAudioError]);
+  const connectUrl = useCallback(
+    async (ctx: AudioContext, vis: ButterchurnVisualizer, url: string) => {
+      try {
+        const audio = new Audio(url);
+        audio.crossOrigin = "anonymous";
+        audio.loop = true;
+        audioElRef.current = audio;
+        const src = ctx.createMediaElementSource(audio);
+        sourceRef.current = src;
+        vis.connectAudio(src);
+        await audio.play();
+      } catch (err) {
+        onAudioError?.(
+          err instanceof Error ? err.message : "Failed to play audio URL",
+        );
+      }
+    },
+    [onAudioError],
+  );
+
+  const connectDesktop = useCallback(
+    async (ctx: AudioContext, vis: ButterchurnVisualizer) => {
+      try {
+        const stream = await navigator.mediaDevices.getDisplayMedia({
+          audio: true,
+          video: false,
+        });
+        micRef.current = stream;
+        const src = ctx.createMediaStreamSource(stream);
+        sourceRef.current = src;
+        vis.connectAudio(src);
+      } catch (err) {
+        onAudioError?.(
+          err instanceof Error ? err.message : "Desktop audio cancelled/denied",
+        );
+      }
+    },
+    [onAudioError],
+  );
 
   useEffect(() => {
     if (!active) return;
@@ -142,11 +184,14 @@ export function usePresetCanvas({ preset, width, height, transitionSec = 1.5, ac
       if (audioInput === "beat") connectBeat(ctx, vis);
       else if (audioInput === "mic") await connectMic(ctx, vis);
       else if (audioInput === "desktop") await connectDesktop(ctx, vis);
-      else if (audioInput === "url" && audioUrl) await connectUrl(ctx, vis, audioUrl);
+      else if (audioInput === "url" && audioUrl)
+        await connectUrl(ctx, vis, audioUrl);
 
       if (preset) {
         vis.loadPreset(preset.preset, 0);
-        try { vis.launchSongTitleAnim(preset.name); } catch {}
+        try {
+          vis.launchSongTitleAnim(preset.name);
+        } catch {}
       }
 
       const render = () => {
@@ -163,11 +208,24 @@ export function usePresetCanvas({ preset, width, height, transitionSec = 1.5, ac
       cancelled = true;
       readyRef.current = false;
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      if (audioElRef.current) { audioElRef.current.pause(); audioElRef.current.src = ""; audioElRef.current = null; }
-      if (micRef.current) { micRef.current.getTracks().forEach((t) => t.stop()); micRef.current = null; }
+      if (audioElRef.current) {
+        audioElRef.current.pause();
+        audioElRef.current.src = "";
+        audioElRef.current = null;
+      }
+      if (micRef.current) {
+        micRef.current.getTracks().forEach((t) => {
+          t.stop();
+        });
+        micRef.current = null;
+      }
       if (sourceRef.current) {
         try {
-          if ("stop" in sourceRef.current && typeof (sourceRef.current as AudioScheduledSourceNode).stop === "function") {
+          if (
+            "stop" in sourceRef.current &&
+            typeof (sourceRef.current as AudioScheduledSourceNode).stop ===
+              "function"
+          ) {
             (sourceRef.current as AudioScheduledSourceNode).stop();
           }
         } catch {}
@@ -175,7 +233,20 @@ export function usePresetCanvas({ preset, width, height, transitionSec = 1.5, ac
       // NOTE: do NOT close ctxRef - it's a shared, app-lifetime AudioContext.
       visRef.current = null;
     };
-  }, [active, width, height, audioInput, audioUrl, connectBeat, connectMic, connectUrl, connectDesktop, onAudioError]);
+  }, [
+    active,
+    width,
+    height,
+    audioInput,
+    audioUrl,
+    connectBeat,
+    connectMic,
+    connectUrl,
+    connectDesktop,
+    preset?.preset,
+    preset?.name,
+    preset,
+  ]);
 
   useEffect(() => {
     const vis = visRef.current;

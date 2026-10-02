@@ -21,7 +21,10 @@ export default function PresetPreview({
     if (!el) return;
     const ro = new ResizeObserver((entries) => {
       const { width, height } = entries[0].contentRect;
-      setSize({ width: Math.max(16, Math.floor(width)), height: Math.max(16, Math.floor(height)) });
+      setSize({
+        width: Math.max(16, Math.floor(width)),
+        height: Math.max(16, Math.floor(height)),
+      });
     });
     ro.observe(el);
     return () => ro.disconnect();
@@ -36,10 +39,20 @@ export default function PresetPreview({
   });
 
   return (
-    <div ref={wrapRef} className={`relative bg-black overflow-hidden ${className}`}>
-      <canvas ref={canvasRef} className="w-full h-full block" width={size.width} height={size.height} />
+    <div
+      ref={wrapRef}
+      className={`relative bg-black overflow-hidden ${className}`}
+    >
+      <canvas
+        ref={canvasRef}
+        className="w-full h-full block"
+        width={size.width}
+        height={size.height}
+      />
       {!preset && (
-        <div className="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">Select a preset</div>
+        <div className="absolute inset-0 flex items-center justify-center text-zinc-500 text-sm">
+          Select a preset
+        </div>
       )}
     </div>
   );

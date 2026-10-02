@@ -23,43 +23,43 @@
  */
 
 export const FLEET_MODEL_PREFERENCE = [
-	"qwen3.8:27b",
-	"gemma4:12b",
-	"qwen2.5-coder:32b-instruct-q4_K_M",
-	"deepseek-r1:32b",
-	"gemma4:26b",
-	"qwen2.5-coder:14b",
-	"llama3.1:8b",
-	"qwen2.5-coder:7b",
-	"mistral:7b",
-	"llama3.2:3b",
+  "qwen3.8:27b",
+  "gemma4:12b",
+  "qwen2.5-coder:32b-instruct-q4_K_M",
+  "deepseek-r1:32b",
+  "gemma4:26b",
+  "qwen2.5-coder:14b",
+  "llama3.1:8b",
+  "qwen2.5-coder:7b",
+  "mistral:7b",
+  "llama3.2:3b",
 ] as const;
 
 /** Approx. minimum VRAM (MB) per model tier - matches TIERS in detect.py. */
 const MODEL_TIER_MIN_VRAM_MB: Record<string, number> = {
-	"qwen3.8:27b": 20000,
-	"gemma4:12b": 20000,
-	"qwen2.5-coder:32b-instruct-q4_K_M": 32000,
-	"deepseek-r1:32b": 32000,
-	"gemma4:26b": 32000,
-	"qwen2.5-coder:14b": 20000,
-	"llama3.1:8b": 20000,
-	"qwen2.5-coder:7b": 14000,
-	"mistral:7b": 14000,
-	"llama3.2:3b": 14000,
+  "qwen3.8:27b": 20000,
+  "gemma4:12b": 20000,
+  "qwen2.5-coder:32b-instruct-q4_K_M": 32000,
+  "deepseek-r1:32b": 32000,
+  "gemma4:26b": 32000,
+  "qwen2.5-coder:14b": 20000,
+  "llama3.1:8b": 20000,
+  "qwen2.5-coder:7b": 14000,
+  "mistral:7b": 14000,
+  "llama3.2:3b": 14000,
 };
 
 export interface GpuInfo {
-	index: number;
-	name: string;
-	vramMb: number;
+  index: number;
+  name: string;
+  vramMb: number;
 }
 
 export interface OllamaModelsState {
-	/** Models currently loaded in Ollama (from GET /api/ps). */
-	loaded: string[];
-	/** Models installed in Ollama (from GET /api/tags). */
-	installed: string[];
+  /** Models currently loaded in Ollama (from GET /api/ps). */
+  loaded: string[];
+  /** Models installed in Ollama (from GET /api/tags). */
+  installed: string[];
 }
 
 /**
@@ -68,23 +68,23 @@ export interface OllamaModelsState {
  * resident Glimmer. Falls back to GPU 0 on a single-card machine.
  */
 export function pickTargetGpu(
-	gpus: GpuInfo[],
-	preferred?: number,
+  gpus: GpuInfo[],
+  preferred?: number,
 ): GpuInfo | null {
-	if (gpus.length === 0) return null;
-	if (preferred !== undefined) {
-		const hit = gpus.find((g) => g.index === preferred);
-		if (hit) return hit;
-	}
-	return gpus.find((g) => g.index > 0) ?? gpus[0];
+  if (gpus.length === 0) return null;
+  if (preferred !== undefined) {
+    const hit = gpus.find((g) => g.index === preferred);
+    if (hit) return hit;
+  }
+  return gpus.find((g) => g.index > 0) ?? gpus[0];
 }
 
 /** True when a model's tier fits the target GPU's VRAM. */
 export function fitsTarget(model: string, target: GpuInfo | null): boolean {
-	if (!target || !target.vramMb) return true;
-	const minVram = MODEL_TIER_MIN_VRAM_MB[model];
-	if (minVram === undefined) return true;
-	return target.vramMb >= minVram;
+  if (!target?.vramMb) return true;
+  const minVram = MODEL_TIER_MIN_VRAM_MB[model];
+  if (minVram === undefined) return true;
+  return target.vramMb >= minVram;
 }
 
 /**
@@ -93,36 +93,36 @@ export function fitsTarget(model: string, target: GpuInfo | null): boolean {
  * (e.g. a 27B on a 16 GB secondary) are skipped entirely.
  */
 export function pickPreferredModel(
-	psModels: string[],
-	tagsModels: string[],
-	targetGpu?: GpuInfo | null,
+  psModels: string[],
+  tagsModels: string[],
+  targetGpu?: GpuInfo | null,
 ): string {
-	const installedOrder = FLEET_MODEL_PREFERENCE.filter(
-		(m) => tagsModels.includes(m) && fitsTarget(m, targetGpu ?? null),
-	);
-	const loaded = new Set(psModels);
-	for (const m of installedOrder) {
-		if (loaded.has(m)) return m; // resident wins - never evict it
-	}
-	return installedOrder[0] ?? ""; // fallback: highest-preference installed that fits
+  const installedOrder = FLEET_MODEL_PREFERENCE.filter(
+    (m) => tagsModels.includes(m) && fitsTarget(m, targetGpu ?? null),
+  );
+  const loaded = new Set(psModels);
+  for (const m of installedOrder) {
+    if (loaded.has(m)) return m; // resident wins - never evict it
+  }
+  return installedOrder[0] ?? ""; // fallback: highest-preference installed that fits
 }
 
 /** Probe Ollama for loaded + installed models. Returns empty state on failure. */
 export async function fetchOllamaModels(
-	base = "http://localhost:11434",
+  base = "http://localhost:11434",
 ): Promise<OllamaModelsState> {
-	const state: OllamaModelsState = { loaded: [], installed: [] };
-	try {
-		const [tags, ps] = await Promise.all([
-			fetch(`${base}/api/tags`).then((r) => r.json()),
-			fetch(`${base}/api/ps`).then((r) => r.json()),
-		]);
-		state.installed = (tags.models ?? []).map((m: { name: string }) => m.name);
-		state.loaded = (ps.models ?? []).map((m: { name: string }) => m.name);
-	} catch {
-		// provider down — caller falls back to its existing default/disabled state
-	}
-	return state;
+  const state: OllamaModelsState = { loaded: [], installed: [] };
+  try {
+    const [tags, ps] = await Promise.all([
+      fetch(`${base}/api/tags`).then((r) => r.json()),
+      fetch(`${base}/api/ps`).then((r) => r.json()),
+    ]);
+    state.installed = (tags.models ?? []).map((m: { name: string }) => m.name);
+    state.loaded = (ps.models ?? []).map((m: { name: string }) => m.name);
+  } catch {
+    // provider down — caller falls back to its existing default/disabled state
+  }
+  return state;
 }
 
 /**
@@ -132,15 +132,15 @@ export async function fetchOllamaModels(
  * non-NVIDIA machines degrade to the old behavior).
  */
 export async function fetchGpus(backendBase = ""): Promise<GpuInfo[]> {
-	if (!backendBase) return [];
-	try {
-		const r = await fetch(`${backendBase}/api/llm/gpus`);
-		if (!r.ok) return [];
-		const d = await r.json();
-		return Array.isArray(d.gpus) ? d.gpus : [];
-	} catch {
-		return [];
-	}
+  if (!backendBase) return [];
+  try {
+    const r = await fetch(`${backendBase}/api/llm/gpus`);
+    if (!r.ok) return [];
+    const d = await r.json();
+    return Array.isArray(d.gpus) ? d.gpus : [];
+  } catch {
+    return [];
+  }
 }
 
 /**
@@ -149,23 +149,23 @@ export async function fetchGpus(backendBase = ""): Promise<GpuInfo[]> {
  * fits the target GPU.
  */
 export async function resolveDefaultModel(
-	previous: string,
-	base = "http://localhost:11434",
-	targetGpu?: GpuInfo | null,
+  previous: string,
+  base = "http://localhost:11434",
+  targetGpu?: GpuInfo | null,
 ): Promise<string> {
-	const state = await fetchOllamaModels(base);
-	if (state.installed.length === 0) return previous ?? "";
-	const preferred = pickPreferredModel(
-		state.loaded,
-		state.installed,
-		targetGpu,
-	);
-	if (
-		previous &&
-		state.installed.includes(previous) &&
-		fitsTarget(previous, targetGpu ?? null)
-	) {
-		return previous;
-	}
-	return preferred;
+  const state = await fetchOllamaModels(base);
+  if (state.installed.length === 0) return previous ?? "";
+  const preferred = pickPreferredModel(
+    state.loaded,
+    state.installed,
+    targetGpu,
+  );
+  if (
+    previous &&
+    state.installed.includes(previous) &&
+    fitsTarget(previous, targetGpu ?? null)
+  ) {
+    return previous;
+  }
+  return preferred;
 }

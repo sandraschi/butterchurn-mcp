@@ -14,7 +14,11 @@ interface Props {
   active?: boolean;
 }
 
-export default function ShaderCanvas({ sceneId, className = "", active = true }: Props) {
+export default function ShaderCanvas({
+  sceneId,
+  className = "",
+  active = true,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [error, setError] = useState("");
   const levels = useAudioEngine(active);
@@ -39,6 +43,7 @@ export default function ShaderCanvas({ sceneId, className = "", active = true }:
       return;
     }
     setError("");
+    // biome-ignore lint/correctness/useHookAtTopLevel: WebGL useProgram API, not a React hook
     gl.useProgram(program);
     initFullscreenQuad(gl, program);
     const uniforms: ShaderUniforms = getUniforms(gl, program);
@@ -50,8 +55,14 @@ export default function ShaderCanvas({ sceneId, className = "", active = true }:
       const parent = canvas.parentElement;
       const w = parent?.clientWidth ?? 640;
       const h = parent?.clientHeight ?? 360;
-      canvas.width = Math.max(16, Math.floor(w * Math.min(devicePixelRatio, 1.5)));
-      canvas.height = Math.max(16, Math.floor(h * Math.min(devicePixelRatio, 1.5)));
+      canvas.width = Math.max(
+        16,
+        Math.floor(w * Math.min(devicePixelRatio, 1.5)),
+      );
+      canvas.height = Math.max(
+        16,
+        Math.floor(h * Math.min(devicePixelRatio, 1.5)),
+      );
       gl.viewport(0, 0, canvas.width, canvas.height);
     };
     resize();
@@ -61,9 +72,11 @@ export default function ShaderCanvas({ sceneId, className = "", active = true }:
     const render = () => {
       const lv = levelsRef.current;
       const t = (performance.now() - t0) / 1000;
+      // biome-ignore lint/correctness/useHookAtTopLevel: WebGL useProgram API, not a React hook
       gl.useProgram(program);
       if (uniforms.u_time) gl.uniform1f(uniforms.u_time, t);
-      if (uniforms.u_resolution) gl.uniform2f(uniforms.u_resolution, canvas.width, canvas.height);
+      if (uniforms.u_resolution)
+        gl.uniform2f(uniforms.u_resolution, canvas.width, canvas.height);
       if (uniforms.u_bass) gl.uniform1f(uniforms.u_bass, lv.bass);
       if (uniforms.u_mid) gl.uniform1f(uniforms.u_mid, lv.mid);
       if (uniforms.u_high) gl.uniform1f(uniforms.u_high, lv.high);
@@ -83,11 +96,15 @@ export default function ShaderCanvas({ sceneId, className = "", active = true }:
 
   if (error) {
     return (
-      <div className={`flex items-center justify-center bg-zinc-950 text-red-400 text-sm ${className}`}>
+      <div
+        className={`flex items-center justify-center bg-zinc-950 text-red-400 text-sm ${className}`}
+      >
         {error}
       </div>
     );
   }
 
-  return <canvas ref={canvasRef} className={`block w-full h-full ${className}`} />;
+  return (
+    <canvas ref={canvasRef} className={`block w-full h-full ${className}`} />
+  );
 }

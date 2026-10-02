@@ -4,8 +4,8 @@ import { Box, ExternalLink, Search, Sparkles, Waves } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import PresetPreview from "../components/PresetPreview";
-import ShaderCanvas from "../visualizers/shader/ShaderCanvas";
-import { listShaderScenes } from "../visualizers/shader/scenes";
+import { usePresets } from "../lib/PresetsContext";
+import { type PresetEntry, presetGradient } from "../lib/presets";
 import {
   loadLastEngine,
   loadLastScene,
@@ -13,9 +13,9 @@ import {
   saveLastScene,
   VISUALIZER_ENGINES,
 } from "../visualizers/registry";
+import ShaderCanvas from "../visualizers/shader/ShaderCanvas";
+import { listShaderScenes } from "../visualizers/shader/scenes";
 import type { VisualizerEngineId } from "../visualizers/types";
-import { usePresets } from "../lib/PresetsContext";
-import { presetGradient, type PresetEntry } from "../lib/presets";
 
 function SceneCard({
   name,
@@ -36,7 +36,9 @@ function SceneCard({
       onClick={onSelect}
       className={clsx(
         "text-left rounded-xl border overflow-hidden transition-all hover:scale-[1.02]",
-        selected ? "border-cyan-400 ring-2 ring-cyan-400/40" : "border-zinc-800 hover:border-zinc-600",
+        selected
+          ? "border-cyan-400 ring-2 ring-cyan-400/40"
+          : "border-zinc-800 hover:border-zinc-600",
       )}
     >
       <div className="aspect-video relative" style={{ background: gradient }}>
@@ -48,7 +50,9 @@ function SceneCard({
       </div>
       <div className="p-2.5 bg-zinc-900">
         <p className="text-xs font-medium text-zinc-200">{name}</p>
-        <p className="text-[10px] text-zinc-500 mt-0.5 line-clamp-2">{description}</p>
+        <p className="text-[10px] text-zinc-500 mt-0.5 line-clamp-2">
+          {description}
+        </p>
       </div>
     </button>
   );
@@ -58,12 +62,20 @@ export default function ToolboxPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { presets, loading: presetsLoading } = usePresets();
 
-  const engine = (searchParams.get("engine") as VisualizerEngineId) || loadLastEngine();
+  const engine =
+    (searchParams.get("engine") as VisualizerEngineId) || loadLastEngine();
   const [shaderScene, setShaderScene] = useState(
-    () => searchParams.get("scene") || loadLastScene("shader") || listShaderScenes()[0]?.id || "gyroid-pulse",
+    () =>
+      searchParams.get("scene") ||
+      loadLastScene("shader") ||
+      listShaderScenes()[0]?.id ||
+      "gyroid-pulse",
   );
   const [butterchurnIdx, setButterchurnIdx] = useState(
-    () => Number(searchParams.get("i")) || Number(loadLastScene("butterchurn")) || 0,
+    () =>
+      Number(searchParams.get("i")) ||
+      Number(loadLastScene("butterchurn")) ||
+      0,
   );
   const [query, setQuery] = useState("");
 
@@ -73,7 +85,8 @@ export default function ToolboxPage() {
 
   useEffect(() => {
     if (engine === "shader") saveLastScene("shader", shaderScene);
-    if (engine === "butterchurn") saveLastScene("butterchurn", String(butterchurnIdx));
+    if (engine === "butterchurn")
+      saveLastScene("butterchurn", String(butterchurnIdx));
   }, [engine, shaderScene, butterchurnIdx]);
 
   const setEngine = useCallback(
@@ -98,7 +111,13 @@ export default function ToolboxPage() {
   const filteredPresets = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return presets.slice(0, 48);
-    return presets.filter((p) => p.name.toLowerCase().includes(q) || p.author.toLowerCase().includes(q)).slice(0, 48);
+    return presets
+      .filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.author.toLowerCase().includes(q),
+      )
+      .slice(0, 48);
   }, [presets, query]);
 
   const butterchurnPreset =
@@ -115,7 +134,9 @@ export default function ToolboxPage() {
         <div className="px-4 py-3 flex flex-wrap items-center gap-3">
           <div className="flex items-center gap-2">
             <Box size={18} className="text-cyan-400" />
-            <h1 className="text-lg font-semibold text-zinc-100">Visualizer toolbox</h1>
+            <h1 className="text-lg font-semibold text-zinc-100">
+              Visualizer toolbox
+            </h1>
           </div>
 
           <div className="flex rounded-lg border border-zinc-700 overflow-hidden">
@@ -133,18 +154,29 @@ export default function ToolboxPage() {
                     : "bg-zinc-900 text-zinc-400 hover:bg-zinc-800",
                 )}
               >
-                {e.era === "modern" ? <Sparkles size={12} /> : <Waves size={12} />}
+                {e.era === "modern" ? (
+                  <Sparkles size={12} />
+                ) : (
+                  <Waves size={12} />
+                )}
                 {e.name}
               </button>
             ))}
           </div>
 
           <div className="flex-1 min-w-[180px] max-w-sm relative">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" />
+            <Search
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"
+            />
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder={engine === "shader" ? "Search shaders…" : "Search MilkDrop presets…"}
+              placeholder={
+                engine === "shader"
+                  ? "Search shaders…"
+                  : "Search MilkDrop presets…"
+              }
               className="w-full h-9 pl-9 pr-3 rounded-lg border border-zinc-700 bg-zinc-900 text-sm text-zinc-100"
             />
           </div>
@@ -162,7 +194,10 @@ export default function ToolboxPage() {
           {engine === "shader" ? (
             <ShaderCanvas sceneId={shaderScene} className="h-full w-full" />
           ) : butterchurnPreset ? (
-            <PresetPreview preset={butterchurnPreset} className="h-full w-full" />
+            <PresetPreview
+              preset={butterchurnPreset}
+              className="h-full w-full"
+            />
           ) : (
             <div className="h-full flex items-center justify-center text-zinc-500 text-sm">
               {presetsLoading ? "Loading presets…" : "No preset selected"}
@@ -175,7 +210,8 @@ export default function ToolboxPage() {
         {engine === "shader" && (
           <>
             <p className="text-xs text-zinc-500 mb-3">
-              WebGL2 GLSL — uniforms: time, bass, mid, high, BPM, beat. Zero MilkDrop baggage.
+              WebGL2 GLSL — uniforms: time, bass, mid, high, BPM, beat. Zero
+              MilkDrop baggage.
             </p>
             <motion.div
               initial={{ opacity: 0 }}
@@ -217,9 +253,14 @@ export default function ToolboxPage() {
                       : "border-zinc-800 hover:border-zinc-600",
                   )}
                 >
-                  <div className="aspect-video" style={{ background: presetGradient(p.name) }} />
+                  <div
+                    className="aspect-video"
+                    style={{ background: presetGradient(p.name) }}
+                  />
                   <div className="p-2 bg-zinc-900">
-                    <p className="text-[10px] text-zinc-300 line-clamp-2">{p.name}</p>
+                    <p className="text-[10px] text-zinc-300 line-clamp-2">
+                      {p.name}
+                    </p>
                   </div>
                 </button>
               ))}

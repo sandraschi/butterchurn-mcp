@@ -20,7 +20,9 @@ export const SHADER_SCENES = [
     author: "viz-toolbox",
     tags: ["raymarch", "3d", "bass"],
     gradient: "linear-gradient(135deg, #6366f1 0%, #ec4899 100%)",
-    fragment: HEADER + `
+    fragment:
+      HEADER +
+      `
 float gyroid(vec3 p) {
   return dot(sin(p), cos(p.yzx));
 }
@@ -73,7 +75,9 @@ void main() {
     author: "viz-toolbox",
     tags: ["tunnel", "neon", "bpm"],
     gradient: "linear-gradient(135deg, #06b6d4 0%, #8b5cf6 100%)",
-    fragment: HEADER + `
+    fragment:
+      HEADER +
+      `
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
   float speed = 1.5 + u_bpm / 120.0 + u_bass * 2.0;
@@ -96,7 +100,9 @@ void main() {
     author: "viz-toolbox",
     tags: ["2d", "spectrum", "clean"],
     gradient: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-    fragment: HEADER + `
+    fragment:
+      HEADER +
+      `
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
   float r = length(uv);
@@ -121,7 +127,9 @@ void main() {
     author: "viz-toolbox",
     tags: ["2d", "plasma", "classic-modern"],
     gradient: "linear-gradient(135deg, #10b981 0%, #3b82f6 100%)",
-    fragment: HEADER + `
+    fragment:
+      HEADER +
+      `
 void main() {
   vec2 uv = gl_FragCoord.xy / u_resolution;
   vec2 p = uv * 4.0;
@@ -145,7 +153,9 @@ void main() {
     author: "viz-toolbox",
     tags: ["noise", "ambient", "treble"],
     gradient: "linear-gradient(135deg, #1e1b4b 0%, #be185d 100%)",
-    fragment: HEADER + `
+    fragment:
+      HEADER +
+      `
 float hash(vec2 p) {
   return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453);
 }
@@ -192,7 +202,9 @@ void main() {
     author: "viz-toolbox",
     tags: ["grid", "synthwave", "mid"],
     gradient: "linear-gradient(135deg, #ec4899 0%, #8b5cf6 50%, #06b6d4 100%)",
-    fragment: HEADER + `
+    fragment:
+      HEADER +
+      `
 void main() {
   vec2 uv = (gl_FragCoord.xy - 0.5 * u_resolution) / min(u_resolution.x, u_resolution.y);
   float horizon = 0.15 + u_mid * 0.1;
@@ -218,12 +230,14 @@ export function getShaderScene(id: string) {
 }
 
 export function listShaderScenes() {
-  return SHADER_SCENES.map(({ id, name, description, author, tags, gradient }) => ({
-    id,
-    name,
-    description,
-    author,
-    tags,
-    gradient,
-  }));
+  return SHADER_SCENES.map(
+    ({ id, name, description, author, tags, gradient }) => ({
+      id,
+      name,
+      description,
+      author,
+      tags,
+      gradient,
+    }),
+  );
 }

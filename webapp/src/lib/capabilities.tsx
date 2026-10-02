@@ -1,11 +1,11 @@
 import {
   createContext,
+  type ReactNode,
   useCallback,
   useContext,
   useEffect,
   useMemo,
   useState,
-  type ReactNode,
 } from "react";
 import type { Capabilities } from "./types";
 
@@ -16,7 +16,9 @@ interface CapabilitiesContextValue {
   refresh: () => Promise<void>;
 }
 
-const CapabilitiesContext = createContext<CapabilitiesContextValue | null>(null);
+const CapabilitiesContext = createContext<CapabilitiesContextValue | null>(
+  null,
+);
 
 export function CapabilitiesProvider({ children }: { children: ReactNode }) {
   const [caps, setCaps] = useState<Capabilities | null>(null);
@@ -46,11 +48,16 @@ export function CapabilitiesProvider({ children }: { children: ReactNode }) {
     [caps, loading, error, refresh],
   );
 
-  return <CapabilitiesContext.Provider value={value}>{children}</CapabilitiesContext.Provider>;
+  return (
+    <CapabilitiesContext.Provider value={value}>
+      {children}
+    </CapabilitiesContext.Provider>
+  );
 }
 
 export function useCapabilities(): CapabilitiesContextValue {
   const ctx = useContext(CapabilitiesContext);
-  if (!ctx) throw new Error("useCapabilities must be used within CapabilitiesProvider");
+  if (!ctx)
+    throw new Error("useCapabilities must be used within CapabilitiesProvider");
   return ctx;
 }

@@ -1,11 +1,4 @@
-import { motion } from "framer-motion";
-import {
-  Download,
-  Eraser,
-  MessageSquare,
-  Send,
-  Sparkles,
-} from "lucide-react";
+import { Download, Eraser, MessageSquare, Send, Sparkles } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchModels, loadLLMConfig } from "../lib/provider";
 
@@ -30,12 +23,38 @@ const PERSONALITIES: Record<string, string> = {
 };
 
 const SUGGESTIONS = [
-  { group: "Browse", pills: ["Show me trippy presets", "Which presets have good bass response?", "Find presets by Geiss"] },
-  { group: "Technical", pills: ["What makes a good warp shader?", "Explain wave modes in MilkDrop", "How do comp equations work?"] },
-  { group: "Mix", pills: ["Best presets for electronic music", "Suggest a preset slideshow for a DJ set", "Which presets work well with slow BPM?"] },
+  {
+    group: "Browse",
+    pills: [
+      "Show me trippy presets",
+      "Which presets have good bass response?",
+      "Find presets by Geiss",
+    ],
+  },
+  {
+    group: "Technical",
+    pills: [
+      "What makes a good warp shader?",
+      "Explain wave modes in MilkDrop",
+      "How do comp equations work?",
+    ],
+  },
+  {
+    group: "Mix",
+    pills: [
+      "Best presets for electronic music",
+      "Suggest a preset slideshow for a DJ set",
+      "Which presets work well with slow BPM?",
+    ],
+  },
 ];
 
-function buildSystemPrompt(skillContent: string, personalityId: string, personalityPrompt: string, customPrompt: string): string {
+function buildSystemPrompt(
+  skillContent: string,
+  personalityId: string,
+  personalityPrompt: string,
+  customPrompt: string,
+): string {
   if (personalityId === "custom") return customPrompt || skillContent;
   return `${skillContent}\n\n---\n\n## Role\n${personalityPrompt}`;
 }
@@ -45,30 +64,40 @@ export default function Chat() {
     try {
       const raw = localStorage.getItem(HISTORY_KEY);
       return raw ? JSON.parse(raw) : [];
-    } catch { return []; }
+    } catch {
+      return [];
+    }
   });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [personalityId, setPersonalityId] = useState(() => localStorage.getItem(PERSONALITY_KEY) || "research-assistant");
+  const [personalityId, setPersonalityId] = useState(
+    () => localStorage.getItem(PERSONALITY_KEY) || "research-assistant",
+  );
   const [customPrompt, setCustomPrompt] = useState("");
   const [skillContent, setSkillContent] = useState("");
-  const [provider, setProvider] = useState("");
+  const [_provider, _setProvider] = useState("");
   const [model, setModel] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
-  const [providerStatus, setProviderStatus] = useState<"detecting" | "detected" | "not_found">("detecting");
+  const [providerStatus, setProviderStatus] = useState<
+    "detecting" | "detected" | "not_found"
+  >("detecting");
   const [providerName, setProviderName] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  const personalityPrompt = PERSONALITIES[personalityId] ?? PERSONALITIES["research-assistant"];
+  const personalityPrompt =
+    PERSONALITIES[personalityId] ?? PERSONALITIES["research-assistant"];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, []);
 
   useEffect(() => {
-    localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-MAX_HISTORY)));
+    localStorage.setItem(
+      HISTORY_KEY,
+      JSON.stringify(messages.slice(-MAX_HISTORY)),
+    );
   }, [messages]);
 
   useEffect(() => {
@@ -82,7 +111,12 @@ export default function Chat() {
       return;
     }
     setProviderStatus("detecting");
-    const port = saved.provider === "Ollama" ? 11434 : saved.provider === "LM Studio" ? 1234 : 8000;
+    const port =
+      saved.provider === "Ollama"
+        ? 11434
+        : saved.provider === "LM Studio"
+          ? 1234
+          : 8000;
     const base = `http://127.0.0.1:${port}`;
     setBaseUrl(base);
     setProviderName(saved.provider);
@@ -107,18 +141,29 @@ export default function Chat() {
         if (r.ok) {
           const data = await r.json();
           if (data.skills?.length > 0) {
-            setSkillContent(data.skills[0].content || "Butterchurn MCP server for MilkDrop visualization. Available tools: get_bpm, set_bpm, list_presets, load_preset, list_visualizers.");
+            setSkillContent(
+              data.skills[0].content ||
+                "Butterchurn MCP server for MilkDrop visualization. Available tools: get_bpm, set_bpm, list_presets, load_preset, list_visualizers.",
+            );
           }
         }
       } catch {}
       if (!skillContent) {
-        setSkillContent("Butterchurn MCP server for MilkDrop visualization. Available tools: get_bpm, set_bpm, list_presets, load_preset, list_visualizers.");
+        setSkillContent(
+          "Butterchurn MCP server for MilkDrop visualization. Available tools: get_bpm, set_bpm, list_presets, load_preset, list_visualizers.",
+        );
       }
     })();
-  }, []);
+  }, [skillContent]);
 
   const systemPrompt = useMemo(
-    () => buildSystemPrompt(skillContent, personalityId, personalityPrompt, customPrompt),
+    () =>
+      buildSystemPrompt(
+        skillContent,
+        personalityId,
+        personalityPrompt,
+        customPrompt,
+      ),
     [skillContent, personalityId, personalityPrompt, customPrompt],
   );
 
@@ -127,7 +172,11 @@ export default function Chat() {
     if (!text || loading || providerStatus !== "detected") return;
     setInput("");
 
-    const userMsg: ChatMessage = { role: "user", content: text, ts: new Date().toISOString() };
+    const userMsg: ChatMessage = {
+      role: "user",
+      content: text,
+      ts: new Date().toISOString(),
+    };
     const updated = [...messages, userMsg];
     setMessages(updated);
     setLoading(true);
@@ -150,15 +199,32 @@ export default function Chat() {
 
       if (!r.ok) {
         const errText = await r.text().catch(() => "Unknown error");
-        setMessages((prev) => [...prev, { role: "assistant", content: `Error: HTTP ${r.status} — ${errText}`, ts: new Date().toISOString() }]);
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "assistant",
+            content: `Error: HTTP ${r.status} — ${errText}`,
+            ts: new Date().toISOString(),
+          },
+        ]);
         return;
       }
 
       const data = await r.json();
       const reply = data.choices?.[0]?.message?.content || "No response";
-      setMessages((prev) => [...prev, { role: "assistant", content: reply, ts: new Date().toISOString() }]);
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: reply, ts: new Date().toISOString() },
+      ]);
     } catch (err) {
-      setMessages((prev) => [...prev, { role: "assistant", content: `Error: ${err instanceof Error ? err.message : "Network error"}`, ts: new Date().toISOString() }]);
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: `Error: ${err instanceof Error ? err.message : "Network error"}`,
+          ts: new Date().toISOString(),
+        },
+      ]);
     } finally {
       setLoading(false);
     }
@@ -172,7 +238,10 @@ export default function Chat() {
   const exportChat = useCallback(() => {
     if (messages.length === 0) return;
     const text = messages
-      .map((m) => `[${m.ts ?? "no-date"}] ${m.role === "user" ? "You" : "Assistant"}: ${m.content}`)
+      .map(
+        (m) =>
+          `[${m.ts ?? "no-date"}] ${m.role === "user" ? "You" : "Assistant"}: ${m.content}`,
+      )
       .join("\n\n");
     const blob = new Blob([text], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -184,15 +253,26 @@ export default function Chat() {
   }, [messages]);
 
   return (
-    <div className="h-full flex flex-col overflow-hidden" data-testid="chat-page">
+    <div
+      className="h-full flex flex-col overflow-hidden"
+      data-testid="chat-page"
+    >
       <div className="shrink-0 flex items-center justify-between gap-2 px-4 py-2 border-b border-zinc-800 bg-zinc-900/50">
         <div className="flex items-center gap-2">
           <MessageSquare size={16} className="text-amber-400" />
           <span className="text-sm font-medium text-zinc-200">Chat</span>
-          <span className={`text-[10px] px-1.5 py-0.5 rounded ${
-            providerStatus === "detected" ? "bg-emerald-900/30 text-emerald-300" : "bg-zinc-800 text-zinc-500"
-          }`}>
-            {providerStatus === "detecting" ? "Detecting…" : providerStatus === "detected" ? `${providerName} :${model}` : "No LLM"}
+          <span
+            className={`text-[10px] px-1.5 py-0.5 rounded ${
+              providerStatus === "detected"
+                ? "bg-emerald-900/30 text-emerald-300"
+                : "bg-zinc-800 text-zinc-500"
+            }`}
+          >
+            {providerStatus === "detecting"
+              ? "Detecting…"
+              : providerStatus === "detected"
+                ? `${providerName} :${model}`
+                : "No LLM"}
           </span>
         </div>
         <div className="flex items-center gap-1.5" data-testid="chat-controls">
@@ -208,6 +288,7 @@ export default function Chat() {
             <option value="custom">Custom</option>
           </select>
           <button
+            type="button"
             onClick={exportChat}
             disabled={messages.length === 0}
             className="p-1.5 rounded text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
@@ -217,6 +298,7 @@ export default function Chat() {
             <Download size={14} />
           </button>
           <button
+            type="button"
             onClick={clearChat}
             disabled={messages.length === 0}
             className="p-1.5 rounded text-zinc-500 hover:text-zinc-300 disabled:opacity-30 transition-colors"
@@ -228,20 +310,34 @@ export default function Chat() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4" data-testid="chat-messages">
+      <div
+        className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
+        data-testid="chat-messages"
+      >
         {messages.length === 0 && !loading && (
           <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
             <Sparkles size={32} className="mb-3 opacity-40" />
-            <p className="text-sm mb-4">Ask about presets, visual techniques, or mixing</p>
+            <p className="text-sm mb-4">
+              Ask about presets, visual techniques, or mixing
+            </p>
             <div className="w-full max-w-lg space-y-2">
               {SUGGESTIONS.map((group) => (
                 <div key={group.group}>
-                  <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1.5">{group.group}</p>
-                  <div className="flex flex-wrap gap-1.5" data-testid="example-prompts">
+                  <p className="text-[10px] text-zinc-600 uppercase tracking-wider mb-1.5">
+                    {group.group}
+                  </p>
+                  <div
+                    className="flex flex-wrap gap-1.5"
+                    data-testid="example-prompts"
+                  >
                     {group.pills.map((pill) => (
                       <button
                         key={pill}
-                        onClick={() => { setInput(pill); inputRef.current?.focus(); }}
+                        type="button"
+                        onClick={() => {
+                          setInput(pill);
+                          inputRef.current?.focus();
+                        }}
                         className="px-2.5 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-xs text-zinc-300 transition-colors"
                       >
                         {pill}
@@ -255,7 +351,11 @@ export default function Chat() {
         )}
 
         {messages.map((msg, i) => (
-          <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+          <div
+            // biome-ignore lint/suspicious/noArrayIndexKey: append-only chat log, never reordered
+            key={i}
+            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+          >
             <div
               className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
                 msg.role === "user"
@@ -285,10 +385,15 @@ export default function Chat() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
             }}
             placeholder={
-              providerStatus === "detected" ? "Ask about visualizers…" : "No LLM provider detected — check Settings"
+              providerStatus === "detected"
+                ? "Ask about visualizers…"
+                : "No LLM provider detected — check Settings"
             }
             disabled={providerStatus !== "detected"}
             rows={1}
@@ -296,6 +401,7 @@ export default function Chat() {
             data-testid="chat-input"
           />
           <button
+            type="button"
             onClick={sendMessage}
             disabled={!input.trim() || loading || providerStatus !== "detected"}
             className="h-9 w-9 flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 transition-colors"

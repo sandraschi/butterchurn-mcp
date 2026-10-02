@@ -24,7 +24,13 @@ const HELP_ITEMS = [
   },
 ];
 
-export default function HelpModal({ open, onClose }: { open: boolean; onClose: () => void }) {
+export default function HelpModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
   if (!open) return null;
 
   return (
@@ -32,17 +38,29 @@ export default function HelpModal({ open, onClose }: { open: boolean; onClose: (
       <div className="bg-zinc-900 border border-zinc-700 rounded-xl w-[90vw] max-w-lg max-h-[85vh] overflow-y-auto shadow-2xl">
         <div className="flex items-center justify-between px-5 py-3 border-b border-zinc-800 sticky top-0 bg-zinc-900">
           <h2 className="text-lg font-semibold text-zinc-100">Help</h2>
-          <button onClick={onClose} className="p-1.5 rounded text-zinc-400 hover:text-white">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1.5 rounded text-zinc-400 hover:text-white"
+          >
             <X size={16} />
           </button>
         </div>
         <div className="p-5 space-y-4">
           {HELP_ITEMS.map((item) => (
-            <div key={item.title} className="border-b border-zinc-800 pb-3 last:border-0">
+            <div
+              key={item.title}
+              className="border-b border-zinc-800 pb-3 last:border-0"
+            >
               <div className="flex items-center gap-2">
                 <h3 className="font-medium text-zinc-200">{item.title}</h3>
                 {item.href && (
-                  <a href={item.href} target="_blank" rel="noreferrer" className="text-amber-400 hover:text-amber-300">
+                  <a
+                    href={item.href}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-400 hover:text-amber-300"
+                  >
                     <ExternalLink size={12} />
                   </a>
                 )}

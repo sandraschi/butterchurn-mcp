@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { AudioLevels } from "../types";
 
 const BPM_POLL = 2000;
@@ -14,7 +14,11 @@ async function fetchBpm(): Promise<number> {
   }
 }
 
-function createBeatBuffer(ctx: AudioContext, bpm: number, durSec = 4): AudioBuffer {
+function createBeatBuffer(
+  ctx: AudioContext,
+  bpm: number,
+  durSec = 4,
+): AudioBuffer {
   const sampleRate = ctx.sampleRate;
   const length = sampleRate * durSec;
   const buffer = ctx.createBuffer(1, length, sampleRate);
@@ -42,7 +46,8 @@ export function useAudioEngine(active: boolean) {
     bpm: 128,
   });
 
-  const rebuildBeat = (bpm: number) => {
+  // Memoized: only refs + stable setLevels + module fns, so effects can depend on it.
+  const rebuildBeat = useCallback((bpm: number) => {
     const ctx = ctxRef.current;
     const analyser = analyserRef.current;
     if (!ctx || !analyser) return;
@@ -60,7 +65,7 @@ export function useAudioEngine(active: boolean) {
     src.connect(analyser);
     src.start();
     sourceRef.current = src;
-  };
+  }, []);
 
   useEffect(() => {
     if (!active) return;
@@ -119,7 +124,7 @@ export function useAudioEngine(active: boolean) {
       void ctx.close();
       ctxRef.current = null;
     };
-  }, [active]);
+  }, [active, rebuildBeat]);
 
   return levels;
 }
