@@ -7,6 +7,8 @@
   <a href="https://github.com/jberg/butterchurn"><img src="https://img.shields.io/badge/butterchurn-2.6-ff6b35?style=flat-square" alt="Butterchurn"></a>
 </p>
 
+Music visualizer for the fleet: fullscreen animated eye-candy that dances to your music, Winamp-MilkDrop style, with beat sync to the DJ setup (mixx-dj-mcp).
+
 > Universal visualizer toolbox — modern WebGL2 GLSL shaders + legacy MilkDrop presets (butterchurn). FastMCP server with BPM sync for [mixx-dj-mcp](https://github.com/sandraschi/mixx-dj-mcp).
 
 ## Engines
