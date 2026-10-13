@@ -1,0 +1,39 @@
+{
+  "product_name": "Butterchurn MCP",
+  "install_dir": "%LOCALAPPDATA%\\Butterchurn MCP",
+  "operator_exe": "butterchurn-mcp-native.exe",
+  "backend_process_names": [
+    "butterchurn-mcp-native",
+    "butterchurn-mcp-backend"
+  ],
+  "backend_port": 10878,
+  "health_path": "/health",
+  "diagnostics_path": "/api/v1/diagnostics",
+  "feature_smoke_path": "/api/v1/system/info",
+  "window_title_re": "Butterchurn MCP",
+  "nsis_glob": "src-tauri/target/release/bundle/nsis/Butterchurn MCP_*_x64-setup.exe",
+  "bridge_ok_text": "REST bridge reachable",
+  "uninstall_registry_filter": "*Butterchurn MCP*",
+  "frontend_port": 10879,
+  "nav_routes": [
+    [
+      "Dashboard",
+      "Dashboard"
+    ],
+    [
+      "Tools",
+      "Tools"
+    ],
+    [
+      "Settings",
+      "Settings"
+    ],
+    [
+      "Help",
+      "Help"
+    ]
+  ],
+  "sidebar_click_x": 30,
+  "sidebar_first_y": 90,
+  "sidebar_step_y": 55
+}
