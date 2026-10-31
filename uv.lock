@@ -89,6 +89,7 @@ source = { editable = "." }
 dependencies = [
     { name = "fastapi" },
     { name = "fastmcp" },
+    { name = "httpx" },
     { name = "python-dotenv" },
     { name = "starlette" },
     { name = "uvicorn", extra = ["standard"] },
@@ -116,6 +117,7 @@ dev = [
 requires-dist = [
     { name = "fastapi", specifier = ">=0.115" },
     { name = "fastmcp", specifier = ">=3.4.4,<4" },
+    { name = "httpx", specifier = ">=0.28" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.24" },
     { name = "python-dotenv", specifier = ">=1.0" },

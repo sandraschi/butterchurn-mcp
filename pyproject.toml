@@ -16,6 +16,7 @@ dependencies = [
     "uvicorn[standard]>=0.32",
     "python-dotenv>=1.0",
     "starlette>=0.46",
+    "httpx>=0.28",
 ]
 
 [project.optional-dependencies]
