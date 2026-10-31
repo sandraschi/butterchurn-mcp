@@ -72,7 +72,7 @@ class GpuInfo:
 @dataclass
 class OllamaInfo:
     available: bool = False
-    url: str = "http://localhost:11434"
+    url: str = "http://127.0.0.1:11434"
     models: list[str] = field(default_factory=list)
     error: str = ""
 
@@ -122,7 +122,7 @@ def detect_gpu() -> GpuInfo:
         return GpuInfo()
 
 
-def check_ollama(url: str = "http://localhost:11434") -> OllamaInfo:
+def check_ollama(url: str = "http://127.0.0.1:11434") -> OllamaInfo:
     try:
         resp = urllib.request.urlopen(f"{url}/api/tags", timeout=3)
         data = _json.loads(resp.read())
