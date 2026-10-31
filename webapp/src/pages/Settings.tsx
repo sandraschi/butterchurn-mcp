@@ -1,35 +1,63 @@
 import { motion } from "framer-motion";
 import { CheckCircle2, Cpu, HelpCircle, Monitor, XCircle } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { pickPreferredModel, pickTargetGpu } from "../lib/modelPreference";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { GpuVramBars } from "../components/GpuVramBars";
+import { LlmProviderCards } from "../components/LlmProviderCards";
 import {
-  type DetectedProvider,
   fetchGpus,
+  fetchLlmSettings,
+  fetchLoaded,
   fetchModels,
+  fetchProviders,
   type GpuInfo,
-  loadLLMConfig,
-  loadTargetGpuIndex,
-  probeProviders,
-  saveLLMConfig,
-  saveTargetGpuIndex,
-} from "../lib/provider";
+  type LoadedModel,
+  type ProviderInfo,
+  saveLlmSettings,
+  saveSelection,
+  unloadLlm,
+} from "../lib/llm";
+import {
+  fitsTarget,
+  type GpuInfo as PrefGpu,
+  pickPreferredModel,
+} from "../lib/modelPreference";
+import { loadTargetGpuIndex, saveTargetGpuIndex } from "../lib/provider";
+
+function gb(mb: number): string {
+  return `${(mb / 1024).toFixed(1)} GB`;
+}
 
 export default function SettingsPage() {
   const [bpm, setBpm] = useState(128);
   const [bpmSaved, setBpmSaved] = useState(false);
   const [bpmError, setBpmError] = useState("");
 
-  const [providers, setProviders] = useState<DetectedProvider[]>([]);
-  const [selectedProvider, setSelectedProvider] = useState("");
+  const [providers, setProviders] = useState<ProviderInfo[]>([]);
+  const [selectedProvider, setSelectedProvider] = useState("ollama");
+  const [endpoint, setEndpoint] = useState("http://127.0.0.1:11434");
   const [selectedModel, setSelectedModel] = useState("");
   const [models, setModels] = useState<string[]>([]);
+  const [modelsSource, setModelsSource] = useState("");
   const [probing, setProbing] = useState(true);
+  const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [kicking, setKicking] = useState(false);
 
   const [gpus, setGpus] = useState<GpuInfo[]>([]);
+  const [loaded, setLoaded] = useState<LoadedModel[]>([]);
   const [targetGpuIndex, setTargetGpuIndex] = useState(-1);
   const [gpuDetected, setGpuDetected] = useState(false);
   const [gpuName, setGpuName] = useState("");
   const mountedRef = useRef(true);
+  const timersRef = useRef<number[]>([]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      mountedRef.current = false;
+      for (const t of timers) clearTimeout(t);
+      timers.length = 0;
+    };
+  }, []);
 
   const loadBpm = useCallback(async () => {
     try {
@@ -45,85 +73,141 @@ export default function SettingsPage() {
     loadBpm();
   }, [loadBpm]);
 
+  const refreshLoaded = useCallback(
+    async (providerId: string, kind: string | undefined, ep: string) => {
+      if (kind !== "local" || providerId !== "ollama") {
+        setLoaded([]);
+        return;
+      }
+      try {
+        const d = await fetchLoaded(providerId, ep);
+        if (mountedRef.current) setLoaded(d.models);
+      } catch {
+        if (mountedRef.current) setLoaded([]);
+      }
+    },
+    [],
+  );
+
+  const refreshTelemetry = useCallback(
+    (providerId: string, kind: string | undefined, ep: string) => {
+      const tick = async () => {
+        try {
+          const cards = await fetchGpus();
+          if (mountedRef.current && cards.length) setGpus(cards);
+        } catch {
+          /* keep previous readout */
+        }
+        await refreshLoaded(providerId, kind, ep);
+      };
+      void tick();
+      timersRef.current.push(
+        window.setTimeout(() => void tick(), 2000),
+        window.setTimeout(() => void tick(), 5000),
+      );
+    },
+    [refreshLoaded],
+  );
+
+  const reloadModels = useCallback(async (id: string) => {
+    try {
+      const m = await fetchModels(id);
+      if (!mountedRef.current) return;
+      setModels(m.models);
+      setModelsSource(m.source);
+      // RULE: never auto-pick. Keep a still-valid choice, else empty.
+      setSelectedModel((cur) => (cur && m.models.includes(cur) ? cur : ""));
+    } catch {
+      if (!mountedRef.current) return;
+      setModels([]);
+      setModelsSource("none");
+    }
+  }, []);
+
+  const refreshProviders = useCallback(async () => {
+    try {
+      const pv = await fetchProviders();
+      if (mountedRef.current) setProviders(pv.providers);
+    } catch {
+      /* keep previous list */
+    }
+  }, []);
+
   useEffect(() => {
-    const saved = loadLLMConfig();
-    const savedGpu = loadTargetGpuIndex();
     (async () => {
       try {
-        // GPU enumeration + hardware detection (target-GPU placement).
-        let target: GpuInfo | null = null;
-        const gpuList = await fetchGpus("");
+        // Backend truth + provider registry + GPU telemetry go out together.
+        const [providersRes, settingsRes, gpusRes] = await Promise.allSettled([
+          fetchProviders(),
+          fetchLlmSettings(),
+          fetchGpus(),
+        ]);
+
         if (!mountedRef.current) return;
-        setGpus(gpuList);
-        if (gpuList.length > 0) {
-          target = pickTargetGpu(gpuList, savedGpu >= 0 ? savedGpu : undefined);
-          if (target) {
+
+        let eps: Record<string, string> = {};
+        let selId = "ollama";
+        if (providersRes.status === "fulfilled") {
+          const list = providersRes.value.providers;
+          setProviders(list);
+          for (const p of list) eps[p.id] = p.base_url;
+        }
+
+        if (settingsRes.status === "fulfilled") {
+          const s = settingsRes.value;
+          if (s.provider) selId = s.provider;
+          if (s.endpoint) eps = { ...eps, [selId]: s.endpoint };
+          if (s.model) setSelectedModel(s.model);
+          // Mirror to localStorage so Chat boots fast even when backend lags.
+          try {
+            saveSelection(selId, s.model ?? "");
+          } catch {}
+        } else {
+          try {
+            const rawP = localStorage.getItem("llm_provider");
+            const rawM = localStorage.getItem("llm_model");
+            if (rawP) selId = rawP;
+            if (rawM) setSelectedModel(rawM);
+          } catch {}
+        }
+
+        setSelectedProvider(selId);
+        setEndpoint(eps[selId] ?? "http://127.0.0.1:11434");
+
+        if (gpusRes.status === "fulfilled") {
+          const cards = gpusRes.value;
+          setGpus(cards);
+          const savedGpu = loadTargetGpuIndex();
+          if (cards.length > 0) {
+            const target =
+              cards.find((g) => g.index === savedGpu) ??
+              cards.find((g) => g.index > 0) ??
+              cards[0];
             setTargetGpuIndex(target.index);
             setGpuDetected(true);
+            const high = cards.find((g) => g.total_mb >= 12288);
+            if (high) setGpuName(high.name);
           }
         }
 
-        // Server-side detection: installed + loaded (resident) Ollama models
-        // via the backend, avoiding browser CORS hangs against localhost.
-        let detect: {
-          ollama?: {
-            available?: boolean;
-            models?: string[];
-            loaded?: string[];
-          };
-        } = {};
-        try {
-          const dr = await fetch("/api/llm/detect");
-          if (dr.ok) detect = (await dr.json()) as typeof detect;
-        } catch {
-          // fall through to port probing
-        }
-
-        const detected = await probeProviders();
-        if (!mountedRef.current) return;
-        setProviders(detected);
-        setProbing(false);
-
-        const detectedNames = detected
-          .filter((p) => p.status === "detected")
-          .map((p) => p.name);
-        const preferred =
-          saved.provider && detectedNames.includes(saved.provider)
-            ? saved.provider
-            : detectedNames[0] || "";
-        setSelectedProvider(preferred);
-
-        if (preferred === "Ollama") {
-          // Resident-first: never evict a loaded model; respect target GPU VRAM.
-          const installed = detect.ollama?.models ?? [];
-          const loaded = detect.ollama?.loaded ?? [];
-          const resident = pickPreferredModel(loaded, installed, target);
-          setModels([...installed].sort());
-          const chosen =
-            saved.model && installed.includes(saved.model)
-              ? saved.model
-              : resident;
-          setSelectedModel(chosen);
-          saveLLMConfig("Ollama", chosen);
-        } else if (preferred) {
-          const p = detected.find((d) => d.name === preferred);
-          if (p) {
-            const ms = await fetchModels(preferred, p.base);
+        const kind =
+          providersRes.status === "fulfilled"
+            ? providersRes.value.providers.find((p) => p.id === selId)?.kind
+            : undefined;
+        await refreshLoaded(selId, kind, eps[selId] ?? "");
+        if (providersRes.status === "fulfilled") {
+          try {
+            const m = await fetchModels(selId);
             if (!mountedRef.current) return;
-            setModels(ms);
-            const preferredModel =
-              saved.model && ms.includes(saved.model)
-                ? saved.model
-                : ms[0] || "";
-            setSelectedModel(preferredModel);
+            setModels(m.models);
+            setModelsSource(m.source);
+            // Keep a still-valid saved choice; never fall back to models[0].
+            setSelectedModel((cur) =>
+              cur && m.models.includes(cur) ? cur : "",
+            );
+          } catch {
+            /* models stay empty */
           }
-        }
-
-        // GPU Opportunity: high-end GPU present but no local LLM.
-        const highGpu = gpuList.some((g) => g.vramMb >= 12288);
-        if (highGpu && detectedNames.length === 0) {
-          const first = gpuList.find((g) => g.vramMb >= 12288);
-          setGpuName(first?.name ?? "GPU");
         }
       } catch (err) {
         // eslint-disable-next-line no-console
@@ -132,27 +216,101 @@ export default function SettingsPage() {
         if (mountedRef.current) setProbing(false);
       }
     })();
-    return () => {
-      mountedRef.current = false;
-    };
-  }, []);
+  }, [refreshLoaded]);
 
   const handleProviderChange = async (name: string) => {
     setSelectedProvider(name);
     setSelectedModel("");
     setModels([]);
-    const p = providers.find((d) => d.name === name);
-    if (!p) return;
-    const ms = await fetchModels(name, p.base);
-    setModels(ms);
-    const first = ms[0] || "";
-    setSelectedModel(first);
-    saveLLMConfig(name, first);
+    setModelsSource("");
+    setSaveMsg(null);
+    const p = providers.find((d) => d.id === name);
+    const ep = p?.base_url ?? "";
+    setEndpoint(ep);
+    await reloadModels(name);
+    await refreshLoaded(name, p?.kind, ep);
   };
+
+  const handleCardsChanged = useCallback(
+    async (id: string) => {
+      await refreshProviders();
+      if (id === selectedProvider) await reloadModels(id);
+    },
+    [refreshProviders, selectedProvider, reloadModels],
+  );
 
   const handleModelChange = (model: string) => {
     setSelectedModel(model);
-    saveLLMConfig(selectedProvider, model);
+  };
+
+  const handleSave = async () => {
+    setSaveMsg(null);
+    try {
+      const res = await saveLlmSettings({
+        provider: selectedProvider,
+        endpoint,
+        model: selectedModel,
+      });
+      saveSelection(selectedProvider, selectedModel);
+      try {
+        const pv = await fetchProviders();
+        setProviders(pv.providers);
+      } catch {}
+      await reloadModels(selectedProvider);
+      const bits = ["Saved."];
+      const sw = res.switch;
+      if (sw && selectedProvider === "ollama" && selectedModel) {
+        if (!sw.engine)
+          bits.push("Ollama engine unreachable — start it first.");
+        if (sw.evicted.length) bits.push(`Evicted: ${sw.evicted.join(", ")}.`);
+        bits.push(
+          sw.warmed
+            ? `${selectedModel} is loaded.`
+            : `Warning: ${selectedModel} did not warm up.`,
+        );
+      } else if (sw && selectedProvider === "ollama" && !selectedModel) {
+        if (sw.evicted.length)
+          bits.push(`Evicted: ${sw.evicted.join(", ")}. Selection cleared.`);
+        else bits.push("Selection cleared — VRAM free.");
+      }
+      setSaveMsg(bits.join(" "));
+      refreshTelemetry(
+        selectedProvider,
+        providers.find((p) => p.id === selectedProvider)?.kind,
+        endpoint,
+      );
+    } catch (e) {
+      setSaveMsg(e instanceof Error ? e.message : String(e));
+    }
+  };
+
+  const handleKickOut = async () => {
+    setSaveMsg(null);
+    setKicking(true);
+    try {
+      const res = await unloadLlm({ provider: selectedProvider, endpoint });
+      await saveLlmSettings({
+        provider: selectedProvider,
+        endpoint,
+        model: "",
+      });
+      saveSelection(selectedProvider, "");
+      setSelectedModel("");
+      const bits = res.evicted.length
+        ? [`Kicked out: ${res.evicted.join(", ")}. Selection cleared.`]
+        : ["Nothing was loaded. Selection cleared."];
+      setSaveMsg(bits.join(" "));
+      setLoaded([]);
+      refreshTelemetry(
+        selectedProvider,
+        providers.find((p) => p.id === selectedProvider)?.kind,
+        endpoint,
+      );
+    } catch (e) {
+      setSaveMsg(e instanceof Error ? e.message : String(e));
+    } finally {
+      setKicking(false);
+    }
   };
 
   const handleGpuChange = (index: number) => {
@@ -181,7 +339,29 @@ export default function SettingsPage() {
     }
   };
 
-  const detectedCount = providers.filter((p) => p.status === "detected").length;
+  // Target-GPU-aware fit info for the model picker (pure fns, backend data).
+  const targetGpu: PrefGpu | null = useMemo(() => {
+    const g = gpus.find((x) => x.index === targetGpuIndex) ?? null;
+    return g ? { index: g.index, name: g.name, vramMb: g.total_mb } : null;
+  }, [gpus, targetGpuIndex]);
+
+  const suggestedModel = useMemo(() => {
+    if (selectedModel || models.length === 0) return "";
+    return pickPreferredModel(
+      loaded.map((m) => m.name),
+      models,
+      targetGpu,
+    );
+  }, [selectedModel, models, loaded, targetGpu]);
+
+  const selectedFits =
+    !selectedModel || !targetGpu || fitsTarget(selectedModel, targetGpu);
+
+  const detectedLocals = providers.filter(
+    (p) => p.kind === "local" && (p.detected ?? p.configured),
+  );
+  const isLocal =
+    providers.find((p) => p.id === selectedProvider)?.kind === "local";
 
   return (
     <motion.div
@@ -209,7 +389,7 @@ export default function SettingsPage() {
             <span className="w-2 h-2 rounded-full bg-zinc-500 animate-pulse" />
             Probing for LLM providers…
           </div>
-        ) : detectedCount === 0 ? (
+        ) : detectedLocals.length === 0 ? (
           <div className="bg-amber-900/20 border border-amber-800/30 rounded-lg px-4 py-3 text-sm text-amber-300">
             No local LLM detected. Install{" "}
             <a
@@ -233,7 +413,7 @@ export default function SettingsPage() {
           </div>
         ) : null}
 
-        {!probing && gpuDetected && gpuName && detectedCount === 0 && (
+        {!probing && gpuDetected && gpuName && detectedLocals.length === 0 && (
           <div className="bg-blue-950/40 border border-blue-800/40 rounded-lg px-4 py-3 text-sm text-blue-300 flex items-start gap-2">
             <Monitor size={14} className="mt-0.5 shrink-0" />
             <span>
@@ -246,25 +426,30 @@ export default function SettingsPage() {
         {providers.length > 0 && (
           <div className="space-y-3">
             <div className="flex flex-wrap gap-2">
-              {providers.map((p) => (
-                <div
-                  key={p.name}
-                  className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs ${
-                    p.status === "detected"
-                      ? "bg-emerald-900/30 text-emerald-300"
-                      : "bg-zinc-800 text-zinc-500"
-                  }`}
-                >
-                  {p.status === "probing" ? (
-                    <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 animate-pulse" />
-                  ) : p.status === "detected" ? (
-                    <CheckCircle2 size={10} className="text-emerald-400" />
-                  ) : (
-                    <XCircle size={10} />
-                  )}
-                  {p.name} :{p.port}
-                </div>
-              ))}
+              {providers
+                .filter((p) => p.kind === "local")
+                .map((p) => {
+                  const on = p.detected ?? p.configured;
+                  return (
+                    <div
+                      key={p.id}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs ${
+                        on
+                          ? "bg-emerald-900/30 text-emerald-300"
+                          : "bg-zinc-800 text-zinc-500"
+                      }`}
+                    >
+                      {probing ? (
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-500 animate-pulse" />
+                      ) : on ? (
+                        <CheckCircle2 size={10} className="text-emerald-400" />
+                      ) : (
+                        <XCircle size={10} />
+                      )}
+                      {p.label}
+                    </div>
+                  );
+                })}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -278,19 +463,15 @@ export default function SettingsPage() {
                 <select
                   id="llm-provider-select"
                   value={selectedProvider}
-                  onChange={(e) => handleProviderChange(e.target.value)}
+                  onChange={(e) => void handleProviderChange(e.target.value)}
                   className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200"
                   data-testid="llm-provider-select"
                 >
-                  {providers.filter((p) => p.status === "detected").length ===
-                    0 && <option value="">No provider detected</option>}
-                  {providers
-                    .filter((p) => p.status === "detected")
-                    .map((p) => (
-                      <option key={p.name} value={p.name}>
-                        {p.name}
-                      </option>
-                    ))}
+                  {providers.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.label} ({p.kind})
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -300,23 +481,62 @@ export default function SettingsPage() {
                 >
                   Model
                 </label>
-                <select
-                  id="llm-model-select"
-                  value={selectedModel}
-                  onChange={(e) => handleModelChange(e.target.value)}
-                  className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200"
-                  data-testid="llm-model-select"
-                  disabled={models.length === 0}
+                {models.length > 0 ? (
+                  <select
+                    id="llm-model-select"
+                    value={selectedModel}
+                    onChange={(e) => handleModelChange(e.target.value)}
+                    className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200"
+                    data-testid="llm-model-select"
+                  >
+                    <option value="">No model selected</option>
+                    {models.map((m) => {
+                      const fits = !targetGpu || fitsTarget(m, targetGpu);
+                      return (
+                        <option key={m} value={m}>
+                          {m}
+                          {targetGpu ? (fits ? " (fits)" : " (too big?)") : ""}
+                        </option>
+                      );
+                    })}
+                  </select>
+                ) : (
+                  <input
+                    id="llm-model-select"
+                    value={selectedModel}
+                    onChange={(e) => handleModelChange(e.target.value)}
+                    placeholder="No models found — install one, then pick it here"
+                    aria-label="Model name"
+                    className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200 font-mono"
+                    data-testid="llm-model-select"
+                  />
+                )}
+                <p className="text-[10px] text-zinc-600 mt-1">
+                  source: {modelsSource}
+                  {suggestedModel ? ` · suggested: ${suggestedModel}` : ""}
+                </p>
+                {selectedModel && !selectedFits && targetGpu && (
+                  <p className="text-[11px] text-amber-300 mt-1">
+                    {selectedModel} may not fit GPU {targetGpu.index} (
+                    {gb(targetGpu.vramMb)}). Save anyway, or pick a smaller
+                    model.
+                  </p>
+                )}
+              </div>
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="llm-endpoint"
+                  className="block text-xs text-zinc-400 mb-1"
                 >
-                  {models.length === 0 && (
-                    <option value="">No models found</option>
-                  )}
-                  {models.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
+                  Endpoint
+                </label>
+                <input
+                  id="llm-endpoint"
+                  value={endpoint}
+                  onChange={(e) => setEndpoint(e.target.value)}
+                  className="w-full h-9 rounded-lg border border-zinc-700 bg-zinc-800 px-3 text-sm text-zinc-200 font-mono"
+                  data-testid="llm-endpoint"
+                />
               </div>
               {gpus.length > 1 && (
                 <div>
@@ -335,8 +555,7 @@ export default function SettingsPage() {
                   >
                     {gpus.map((g) => (
                       <option key={g.index} value={g.index}>
-                        GPU {g.index} - {g.name} ({Math.round(g.vramMb / 1024)}{" "}
-                        GB)
+                        GPU {g.index} - {g.name} ({gb(g.total_mb)})
                       </option>
                     ))}
                   </select>
@@ -348,14 +567,60 @@ export default function SettingsPage() {
               )}
             </div>
 
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void handleSave()}
+                disabled={probing}
+                className="h-9 px-4 rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-sm text-white font-medium transition-colors"
+                data-testid="settings-llm-save"
+              >
+                Save
+              </button>
+              {isLocal && selectedProvider === "ollama" && (
+                <button
+                  type="button"
+                  onClick={() => void handleKickOut()}
+                  disabled={kicking || probing}
+                  className="h-9 px-4 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-sm text-zinc-300 transition-colors"
+                  data-testid="settings-llm-kick"
+                >
+                  {kicking ? "Kicking…" : "Kick LLM out"}
+                </button>
+              )}
+              {saveMsg && (
+                <span className="text-xs text-zinc-400">{saveMsg}</span>
+              )}
+            </div>
+
             {selectedProvider && selectedModel && (
               <div className="flex items-center gap-2 text-xs text-emerald-400 bg-emerald-900/20 rounded-lg px-3 py-2">
                 <CheckCircle2 size={12} />
                 Active: {selectedProvider} / {selectedModel}
               </div>
             )}
+
+            {isLocal && <GpuVramBars gpus={gpus} loaded={loaded} />}
           </div>
         )}
+      </section>
+
+      <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">
+        <div className="flex items-center gap-2">
+          <Cpu size={16} className="text-amber-400" />
+          <h2 className="text-sm font-semibold text-zinc-200">All providers</h2>
+        </div>
+        <p className="text-xs text-zinc-500">
+          Test any engine, paste cloud keys, or install Ollama in one click.
+          Saving a key never changes your active selection.
+        </p>
+        <LlmProviderCards
+          providers={providers}
+          probing={probing}
+          selected={selectedProvider}
+          onChanged={handleCardsChanged}
+          onUse={(id) => void handleProviderChange(id)}
+        />
       </section>
 
       <section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 space-y-4">

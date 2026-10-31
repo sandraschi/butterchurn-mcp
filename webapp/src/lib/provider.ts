@@ -1,3 +1,26 @@
+/**
+ * Compat shim: legacy provider.ts surface, now backend-first.
+ *
+ * Canonical stack lives in `@/lib/llm` (vendored from
+ * mcp-central-docs/templates/llm/lib-llm.ts). This file keeps the old
+ * imports working (Settings, Chat) while fixing the two bugs that broke
+ * Settings:
+ *
+ * - fetchGpus("") returned [] always (`if (!backendBase) return []`).
+ * - probeProviders/fetchModels hit Ollama/LM Studio from the browser,
+ *   which CORS-blocks. All traffic now goes through the backend proxy.
+ */
+
+import {
+  fetchGpus as fetchGpusNew,
+  fetchLlmSettings,
+  fetchModels as fetchModelsNew,
+  fetchProviders,
+  loadSelection,
+  type GpuInfo as NewGpuInfo,
+  saveSelection,
+} from "@/lib/llm";
+
 export interface DetectedProvider {
   name: string;
   port: number;
@@ -12,33 +35,22 @@ export interface LLMConfig {
   models: string[];
 }
 
-const PROVIDER_KEY = "llm_provider";
-const MODEL_KEY = "llm_model";
 const GPU_KEY = "llm_gpu";
 
+/** Local mirror of the backend selection (fast boot; backend is truth). */
 export function loadLLMConfig(): { provider: string; model: string } {
-  try {
-    return {
-      provider: localStorage.getItem(PROVIDER_KEY) ?? "",
-      model: localStorage.getItem(MODEL_KEY) ?? "",
-    };
-  } catch {
-    return { provider: "", model: "" };
-  }
+  return loadSelection();
 }
 
 export function saveLLMConfig(provider: string, model: string): void {
-  try {
-    localStorage.setItem(PROVIDER_KEY, provider);
-    localStorage.setItem(MODEL_KEY, model);
-  } catch {
-    // storage unavailable
-  }
+  saveSelection(provider, model);
 }
 
 export function loadTargetGpuIndex(): number {
   try {
-    const n = Number(localStorage.getItem(GPU_KEY));
+    const raw = localStorage.getItem(GPU_KEY);
+    if (raw === null) return -1;
+    const n = Number(raw);
     return Number.isFinite(n) ? n : -1;
   } catch {
     return -1;
@@ -53,66 +65,49 @@ export function saveTargetGpuIndex(index: number): void {
   }
 }
 
-const PROVIDERS: {
-  name: string;
-  port: number;
-  probe: string;
-  modelKey: string;
-}[] = [
-  {
-    name: "Ollama",
-    port: 11434,
-    probe: "/api/tags",
-    modelKey: "models[].name",
-  },
-  { name: "LM Studio", port: 1234, probe: "/v1/models", modelKey: "data[].id" },
-  { name: "vLLM", port: 8000, probe: "/v1/models", modelKey: "data[].id" },
-];
-
-export async function probeProviders(): Promise<DetectedProvider[]> {
-  const results: DetectedProvider[] = [];
-  for (const p of PROVIDERS) {
-    const entry: DetectedProvider = {
-      name: p.name,
-      port: p.port,
-      base: `http://127.0.0.1:${p.port}`,
-      status: "probing",
-    };
-    results.push(entry);
-    try {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), 3000);
-      const r = await fetch(`http://127.0.0.1:${p.port}${p.probe}`, {
-        signal: controller.signal,
-      });
-      clearTimeout(id);
-      entry.status = r.ok ? "detected" : "not_found";
-    } catch {
-      entry.status = "not_found";
-    }
-  }
-  return results;
+function portHint(baseUrl: string): number {
+  const m = baseUrl.match(/:(\d+)$/);
+  return m ? Number(m[1]) : 0;
 }
 
+function labelToName(label: string): string {
+  const l = label.toLowerCase();
+  if (l.includes("ollama")) return "Ollama";
+  if (l.includes("lm studio")) return "LM Studio";
+  if (l.includes("vllm")) return "vLLM";
+  return label;
+}
+
+/** Backend-first provider probe (never touches 127.0.0.1 from the browser). */
+export async function probeProviders(): Promise<DetectedProvider[]> {
+  try {
+    const { providers } = await fetchProviders();
+    return providers.map((p) => ({
+      name: labelToName(p.label),
+      port: portHint(p.base_url),
+      base: p.base_url,
+      status: (p.detected ?? p.configured) ? "detected" : "not_found",
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/** Backend-first model list (live when reachable/keyed, else curated). */
 export async function fetchModels(
   provider: string,
-  base: string,
+  _base?: string,
 ): Promise<string[]> {
+  const id = provider.toLowerCase().includes("lm")
+    ? "lmstudio"
+    : provider.toLowerCase().includes("vllm")
+      ? "vllm"
+      : provider.toLowerCase().includes("ollama")
+        ? "ollama"
+        : provider.toLowerCase();
   try {
-    const path = provider === "Ollama" ? "/api/tags" : "/v1/models";
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 3000);
-    const r = await fetch(`${base}${path}`, { signal: controller.signal });
-    clearTimeout(id);
-    if (!r.ok) return [];
-    const data = (await r.json()) as {
-      models?: { name: string }[];
-      data?: { id: string }[];
-    };
-    if (provider === "Ollama" && data.models)
-      return data.models.map((m) => m.name);
-    if (data.data) return data.data.map((m) => m.id);
-    return [];
+    const m = await fetchModelsNew(id);
+    return m.models;
   } catch {
     return [];
   }
@@ -132,14 +127,20 @@ export interface GpuInfo {
   vramMb: number;
 }
 
-/** Enumerate NVIDIA GPUs via backend /api/llm/gpus (falls back to []). */
-export async function fetchGpus(backendBase = ""): Promise<GpuInfo[]> {
-  if (!backendBase) return [];
+/** Backend-first GPU telemetry (compat shape: vramMb = total_mb). */
+export async function fetchGpus(_backendBase = ""): Promise<GpuInfo[]> {
   try {
-    const r = await fetch(`${backendBase}/api/llm/gpus`);
-    if (!r.ok) return [];
-    const d = (await r.json()) as { gpus?: GpuInfo[] };
-    return Array.isArray(d.gpus) ? d.gpus : [];
+    const [gpus, settings] = await Promise.allSettled([
+      fetchGpusNew(),
+      fetchLlmSettings().catch(() => null),
+    ]);
+    void settings;
+    if (gpus.status !== "fulfilled") return [];
+    return (gpus.value as NewGpuInfo[]).map((g) => ({
+      index: g.index,
+      name: g.name,
+      vramMb: g.total_mb,
+    }));
   } catch {
     return [];
   }

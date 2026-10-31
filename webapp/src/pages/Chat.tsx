@@ -1,11 +1,40 @@
-import { Download, Eraser, MessageSquare, Send, Sparkles } from "lucide-react";
+import {
+  Check,
+  Copy,
+  Download,
+  Eraser,
+  MessageSquare,
+  Send,
+  Sparkles,
+  Square,
+} from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { fetchModels, loadLLMConfig } from "../lib/provider";
+import ReactMarkdown from "react-markdown";
+import { Link } from "react-router-dom";
+import {
+  fetchLlmSettings,
+  fetchModels,
+  loadSelection,
+  streamChat,
+  subscribeSelection,
+} from "../lib/llm";
 
 interface ChatMessage {
+  id: string;
   role: "user" | "assistant";
   content: string;
   ts?: string;
+}
+
+let msgSeq = 0;
+
+function nextMsgId(): string {
+  msgSeq += 1;
+  return `m${Date.now().toString(36)}-${msgSeq}`;
+}
+
+function withIds(list: Array<Omit<ChatMessage, "id">>): ChatMessage[] {
+  return list.map((m) => ({ ...m, id: nextMsgId() }));
 }
 
 const HISTORY_KEY = "butterchurn:chat";
@@ -63,7 +92,8 @@ export default function Chat() {
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     try {
       const raw = localStorage.getItem(HISTORY_KEY);
-      return raw ? JSON.parse(raw) : [];
+      const parsed = raw ? JSON.parse(raw) : [];
+      return Array.isArray(parsed) ? withIds(parsed) : [];
     } catch {
       return [];
     }
@@ -75,23 +105,24 @@ export default function Chat() {
   );
   const [customPrompt, setCustomPrompt] = useState("");
   const [skillContent, setSkillContent] = useState("");
-  const [_provider, _setProvider] = useState("");
+  const [provider, setProvider] = useState("");
   const [model, setModel] = useState("");
-  const [baseUrl, setBaseUrl] = useState("");
+  const [copiedIdx, setCopiedIdx] = useState<number | null>(null);
   const [providerStatus, setProviderStatus] = useState<
     "detecting" | "detected" | "not_found"
   >("detecting");
-  const [providerName, setProviderName] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const copyTimerRef = useRef<number | null>(null);
 
   const personalityPrompt =
     PERSONALITIES[personalityId] ?? PERSONALITIES["research-assistant"];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  });
 
   useEffect(() => {
     localStorage.setItem(
@@ -105,33 +136,61 @@ export default function Chat() {
   }, [personalityId]);
 
   useEffect(() => {
-    const saved = loadLLMConfig();
-    if (!saved.provider) {
-      setProviderStatus("not_found");
-      return;
-    }
-    setProviderStatus("detecting");
-    const port =
-      saved.provider === "Ollama"
-        ? 11434
-        : saved.provider === "LM Studio"
-          ? 1234
-          : 8000;
-    const base = `http://127.0.0.1:${port}`;
-    setBaseUrl(base);
-    setProviderName(saved.provider);
-    setModel(saved.model);
+    return () => {
+      if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+    };
+  }, []);
 
-    fetchModels(saved.provider, base).then((ms) => {
-      if (ms.length > 0) {
-        setProviderStatus("detected");
-        if (!saved.model || !ms.includes(saved.model)) {
-          setModel(ms[0]);
-        }
-      } else {
-        setProviderStatus("not_found");
+  // Backend-first selection: backend truth on mount/focus, live-sync across tabs.
+  useEffect(() => {
+    let cancelled = false;
+    const resolve = async () => {
+      // Fast mirror first so the header paints instantly.
+      const mirror = loadSelection();
+      if (!cancelled && mirror.provider) {
+        setProvider(mirror.provider);
+        setModel(mirror.model);
       }
+      try {
+        const s = await fetchLlmSettings();
+        if (cancelled) return;
+        const p = s.provider ?? "";
+        const m = s.model ?? "";
+        setProvider(p);
+        setModel(m);
+        if (!p || !m) {
+          setProviderStatus("not_found");
+          return;
+        }
+        // Confirm the saved model is still live (not evicted/uninstalled).
+        try {
+          const live = await fetchModels(p);
+          setProviderStatus(live.models.includes(m) ? "detected" : "not_found");
+        } catch {
+          // Backend reachable and selection non-empty: allow send; the
+          // send-time guard re-checks and surfaces the real error.
+          setProviderStatus("detected");
+        }
+      } catch {
+        if (cancelled) return;
+        setProviderStatus(
+          mirror.provider && mirror.model ? "detected" : "not_found",
+        );
+      }
+    };
+    void resolve();
+    const onFocus = () => void resolve();
+    const unsub = subscribeSelection((sel) => {
+      setProvider(sel.provider);
+      setModel(sel.model);
+      setProviderStatus(sel.provider && sel.model ? "detected" : "not_found");
     });
+    window.addEventListener("focus", onFocus);
+    return () => {
+      cancelled = true;
+      unsub();
+      window.removeEventListener("focus", onFocus);
+    };
   }, []);
 
   useEffect(() => {
@@ -167,70 +226,152 @@ export default function Chat() {
     [skillContent, personalityId, personalityPrompt, customPrompt],
   );
 
+  const stopStreaming = useCallback(() => {
+    abortRef.current?.abort();
+  }, []);
+
+  const copyMessage = useCallback((idx: number, text: string) => {
+    const done = () => {
+      setCopiedIdx(idx);
+      if (copyTimerRef.current) window.clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = window.setTimeout(() => setCopiedIdx(null), 1500);
+    };
+    try {
+      const p = navigator.clipboard?.writeText(text);
+      if (p) {
+        void p.then(done).catch(() => {});
+        return;
+      }
+    } catch {}
+    // Clipboard API unavailable (permissions): fall back to a temp textarea.
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch {}
+  }, []);
+
   const sendMessage = useCallback(async () => {
     const text = input.trim();
-    if (!text || loading || providerStatus !== "detected") return;
+    if (!text || loading) return;
+    // Send-time guard: re-read the live selection, refuse when empty.
+    // No fallback model, ever.
+    let live = { provider, model };
+    try {
+      const s = await fetchLlmSettings();
+      live = { provider: s.provider ?? "", model: s.model ?? "" };
+      setProvider(live.provider);
+      setModel(live.model);
+    } catch {
+      live = loadSelection();
+    }
+    if (!live.provider || !live.model) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: nextMsgId(),
+          role: "user",
+          content: text,
+          ts: new Date().toISOString(),
+        },
+        {
+          id: nextMsgId(),
+          role: "assistant",
+          content: "No LLM selected — pick one in Settings first.",
+          ts: new Date().toISOString(),
+        },
+      ]);
+      setInput("");
+      return;
+    }
+    setProviderStatus("detected");
     setInput("");
 
     const userMsg: ChatMessage = {
+      id: nextMsgId(),
       role: "user",
       content: text,
       ts: new Date().toISOString(),
     };
-    const updated = [...messages, userMsg];
-    setMessages(updated);
+    const context = [...messages, userMsg].map((m) => ({
+      role: m.role,
+      content: m.content,
+    }));
+    setMessages((prev) => [
+      ...prev,
+      userMsg,
+      {
+        id: nextMsgId(),
+        role: "assistant",
+        content: "",
+        ts: new Date().toISOString(),
+      },
+    ]);
     setLoading(true);
-
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    let acc = "";
     try {
-      const chatBody = {
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...updated.map((m) => ({ role: m.role, content: m.content })),
-        ],
-        stream: false,
-      };
-
-      const r = await fetch(`${baseUrl}/v1/chat/completions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(chatBody),
-      });
-
-      if (!r.ok) {
-        const errText = await r.text().catch(() => "Unknown error");
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content: `Error: HTTP ${r.status} — ${errText}`,
-            ts: new Date().toISOString(),
-          },
-        ]);
-        return;
-      }
-
-      const data = await r.json();
-      const reply = data.choices?.[0]?.message?.content || "No response";
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: reply, ts: new Date().toISOString() },
-      ]);
-    } catch (err) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: `Error: ${err instanceof Error ? err.message : "Network error"}`,
-          ts: new Date().toISOString(),
+      await streamChat(
+        live.provider,
+        live.model,
+        [{ role: "system", content: systemPrompt }, ...context],
+        (token) => {
+          acc += token;
+          const snapshot = acc;
+          setMessages((prev) => {
+            const next = [...prev];
+            next[next.length - 1] = {
+              ...next[next.length - 1],
+              content: snapshot,
+            };
+            return next;
+          });
         },
-      ]);
+        ctrl.signal,
+      );
+      if (!acc) {
+        setMessages((prev) => {
+          const next = [...prev];
+          next[next.length - 1] = {
+            ...next[next.length - 1],
+            content: "(no response)",
+          };
+          return next;
+        });
+      }
+    } catch (err) {
+      const aborted = err instanceof DOMException && err.name === "AbortError";
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        if (acc) {
+          next[next.length - 1] = {
+            ...last,
+            content: aborted ? `${acc}\n\n*(stopped)*` : acc,
+          };
+        } else {
+          next[next.length - 1] = {
+            ...last,
+            content: aborted
+              ? "(stopped)"
+              : `Error: ${err instanceof Error ? err.message : "Network error"}`,
+          };
+        }
+        return next;
+      });
     } finally {
       setLoading(false);
+      abortRef.current = null;
     }
-  }, [input, loading, providerStatus, messages, systemPrompt, model, baseUrl]);
+  }, [input, loading, messages, systemPrompt, provider, model]);
 
   const clearChat = useCallback(() => {
+    abortRef.current?.abort();
     setMessages([]);
     localStorage.removeItem(HISTORY_KEY);
   }, []);
@@ -271,7 +412,7 @@ export default function Chat() {
             {providerStatus === "detecting"
               ? "Detecting…"
               : providerStatus === "detected"
-                ? `${providerName} :${model}`
+                ? `${provider} :${model}`
                 : "No LLM"}
           </span>
         </div>
@@ -314,12 +455,21 @@ export default function Chat() {
         className="flex-1 overflow-y-auto px-4 py-4 space-y-4"
         data-testid="chat-messages"
       >
-        {messages.length === 0 && !loading && (
+        {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
             <Sparkles size={32} className="mb-3 opacity-40" />
-            <p className="text-sm mb-4">
-              Ask about presets, visual techniques, or mixing
-            </p>
+            {providerStatus === "not_found" ? (
+              <p className="text-sm mb-4">
+                No LLM selected —{" "}
+                <Link to="/settings" className="underline text-amber-300">
+                  pick one in Settings
+                </Link>
+              </p>
+            ) : (
+              <p className="text-sm mb-4">
+                Ask about presets, visual techniques, or mixing
+              </p>
+            )}
             <div className="w-full max-w-lg space-y-2">
               {SUGGESTIONS.map((group) => (
                 <div key={group.group}>
@@ -352,29 +502,39 @@ export default function Chat() {
 
         {messages.map((msg, i) => (
           <div
-            // biome-ignore lint/suspicious/noArrayIndexKey: append-only chat log, never reordered
-            key={i}
+            key={msg.id}
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <div
-              className={`max-w-[75%] rounded-xl px-4 py-2.5 text-sm leading-relaxed ${
-                msg.role === "user"
-                  ? "bg-amber-600/20 text-zinc-100 border border-amber-700/30"
-                  : "bg-zinc-800 text-zinc-200 border border-zinc-700"
-              }`}
-            >
-              {msg.content}
-            </div>
+            {msg.role === "user" ? (
+              <div className="max-w-[75%] rounded-xl px-4 py-2.5 text-sm leading-relaxed bg-amber-600/20 text-zinc-100 border border-amber-700/30">
+                {msg.content}
+              </div>
+            ) : (
+              <div className="max-w-[75%] rounded-xl px-4 py-2.5 bg-zinc-800 text-zinc-200 border border-zinc-700">
+                {msg.content ? (
+                  <div className="chat-md">
+                    <ReactMarkdown>{msg.content}</ReactMarkdown>
+                  </div>
+                ) : (
+                  <span className="text-sm text-zinc-400 animate-pulse">
+                    Thinking…
+                  </span>
+                )}
+                {msg.content && (
+                  <button
+                    type="button"
+                    onClick={() => copyMessage(i, msg.content)}
+                    className="mt-1.5 flex items-center gap-1 text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors"
+                    title="Copy reply"
+                  >
+                    {copiedIdx === i ? <Check size={12} /> : <Copy size={12} />}
+                    {copiedIdx === i ? "Copied" : "Copy"}
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         ))}
-
-        {loading && (
-          <div className="flex justify-start">
-            <div className="bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-zinc-400">
-              Thinking…
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
@@ -395,20 +555,31 @@ export default function Chat() {
                 ? "Ask about visualizers…"
                 : "No LLM provider detected — check Settings"
             }
-            disabled={providerStatus !== "detected"}
             rows={1}
             className="flex-1 resize-none rounded-lg border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm text-zinc-100 placeholder:text-zinc-500 focus:outline-none focus:ring-1 focus:ring-amber-500/50"
             data-testid="chat-input"
           />
-          <button
-            type="button"
-            onClick={sendMessage}
-            disabled={!input.trim() || loading || providerStatus !== "detected"}
-            className="h-9 w-9 flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 transition-colors"
-            data-testid="chat-send"
-          >
-            <Send size={14} className="text-white" />
-          </button>
+          {loading ? (
+            <button
+              type="button"
+              onClick={stopStreaming}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-zinc-700 hover:bg-zinc-600 transition-colors"
+              title="Stop generating"
+              data-testid="chat-stop"
+            >
+              <Square size={14} className="text-white" />
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={sendMessage}
+              disabled={!input.trim()}
+              className="h-9 w-9 flex items-center justify-center rounded-lg bg-amber-600 hover:bg-amber-500 disabled:opacity-40 transition-colors"
+              data-testid="chat-send"
+            >
+              <Send size={14} className="text-white" />
+            </button>
+          )}
         </div>
       </div>
 
